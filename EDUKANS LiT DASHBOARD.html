@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Edukans LiT — Field Activity Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink: #12203A;
+    --ink-2: #1B2E4F;
+    --ink-3: #24395E;
+    --cream: #F5EFE2;
+    --cream-dim: #C9C0AC;
+    --ochre: #D08A3E;
+    --ochre-dim: #9C6A32;
+    --acacia: #5C9271;
+    --clay: #C2604B;
+    --slate: #8CA0B8;
+    --line: rgba(245,239,226,0.12);
+    --line-strong: rgba(245,239,226,0.22);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 8% -10%, rgba(208,138,62,0.14), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(92,146,113,0.10), transparent 55%),
+      var(--ink);
+    color:var(--cream);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 24px 80px;}
+
+  /* ---------- Header ---------- */
+  header.hero{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    padding-bottom:22px; margin-bottom:6px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ochre); display:flex; align-items:center; gap:8px;
+  }
+  .dot-live{
+    width:7px;height:7px;border-radius:50%;background:var(--acacia);
+    box-shadow:0 0 0 0 rgba(92,146,113,.6); animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(92,146,113,.55);}
+    70%{box-shadow:0 0 0 8px rgba(92,146,113,0);}
+    100%{box-shadow:0 0 0 0 rgba(92,146,113,0);}
+  }
+  h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:38px; line-height:1.05;
+    margin:6px 0 6px; letter-spacing:-0.01em;
+  }
+  h1 em{font-style:italic; font-weight:500; color:var(--ochre);}
+  .sub{color:var(--cream-dim); font-size:14.5px; max-width:520px; line-height:1.5;}
+  .clockbox{
+    text-align:right; font-family:'IBM Plex Mono', monospace;
+  }
+  .clockbox .time{font-size:26px; color:var(--cream); letter-spacing:.02em;}
+  .clockbox .lbl{font-size:11px; color:var(--slate); text-transform:uppercase; letter-spacing:.1em; margin-top:2px;}
+
+  /* ---------- Ticker ---------- */
+  .ticker-outer{
+    margin-top:16px; border:1px solid var(--line); border-radius:10px; background:var(--ink-2);
+    overflow:hidden; position:relative;
+  }
+  .ticker-outer::before, .ticker-outer::after{
+    content:""; position:absolute; top:0; bottom:0; width:44px; z-index:2; pointer-events:none;
+  }
+  .ticker-outer::before{left:0; background:linear-gradient(90deg, var(--ink-2), transparent);}
+  .ticker-outer::after{right:0; background:linear-gradient(270deg, var(--ink-2), transparent);}
+  .ticker-tag{
+    position:absolute; left:0; top:0; bottom:0; display:flex; align-items:center; gap:6px;
+    padding:0 14px; background:var(--ink-3); z-index:3; font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ochre);
+    border-right:1px solid var(--line-strong);
+  }
+  .ticker-track{
+    display:flex; white-space:nowrap; padding:10px 0 10px 130px;
+    animation:scroll-left 38s linear infinite;
+  }
+  .ticker-outer:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll-left{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  .tick-item{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--cream-dim);
+    padding:0 26px; border-right:1px solid var(--line); display:flex; align-items:center; gap:8px;
+  }
+  .tick-item b{color:var(--cream); font-weight:600;}
+  .tick-item .tag{color:var(--acacia);}
+
+  /* ---------- KPI strip ---------- */
+  .kpis{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-top:22px;
+  }
+  @media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:12px; padding:16px 16px 14px;
+    position:relative; overflow:hidden;
+  }
+  .kpi::after{
+    content:""; position:absolute; right:-20px; top:-20px; width:70px; height:70px; border-radius:50%;
+    background:radial-gradient(circle, var(--kc, var(--ochre)) 0%, transparent 72%); opacity:.28;
+  }
+  .kpi .val{font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--cream);}
+  .kpi .lbl{font-size:11.5px; color:var(--cream-dim); margin-top:3px; letter-spacing:.02em;}
+  .kpi .delta{font-size:11px; margin-top:8px; font-family:'IBM Plex Mono', monospace; color:var(--acacia);}
+
+  /* ---------- Layout grid ---------- */
+  .grid2{display:grid; grid-template-columns:1.3fr 1fr; gap:16px; margin-top:20px;}
+  @media(max-width:920px){.grid2{grid-template-columns:1fr;}}
+  .grid3{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;}
+  @media(max-width:920px){.grid3{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:14px; padding:18px 18px 14px;
+  }
+  .panel h3{
+    font-family:'Fraunces', serif; font-weight:600; font-size:16.5px; margin:0 0 3px; color:var(--cream);
+  }
+  .panel .panel-sub{font-size:11.5px; color:var(--slate); margin-bottom:14px;}
+  .chart-holder{position:relative; height:240px;}
+  .chart-holder.tall{height:300px;}
+
+  /* ---------- Filter bar ---------- */
+  .filterbar{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:22px;
+    padding:12px 14px; background:var(--ink-2); border:1px solid var(--line); border-radius:12px;
+  }
+  .filterbar label{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--slate); display:block; margin-bottom:4px;}
+  select, input[type=text]{
+    background:var(--ink-3); color:var(--cream); border:1px solid var(--line-strong); border-radius:8px;
+    padding:8px 10px; font-family:'IBM Plex Sans', sans-serif; font-size:13px; outline:none; min-width:150px;
+  }
+  select:focus, input[type=text]:focus{border-color:var(--ochre);}
+  .fgroup{display:flex; flex-direction:column;}
+  .reset-btn{
+    background:transparent; border:1px solid var(--line-strong); color:var(--cream-dim); border-radius:8px;
+    padding:8px 14px; font-size:12.5px; cursor:pointer; font-family:'IBM Plex Sans', sans-serif;
+    margin-top:auto; transition:.15s;
+  }
+  .reset-btn:hover{border-color:var(--ochre); color:var(--ochre);}
+  .filter-count{margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ochre); align-self:center;}
+
+  /* ---------- Sync bar ---------- */
+  .syncbar{margin-top:14px; padding:10px 14px; background:var(--ink-2); border:1px solid var(--line); border-radius:12px;}
+  .syncbar-row{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;}
+  .sync-status{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--slate); align-self:center; margin-left:auto;}
+  .sync-status.live{color:var(--acacia);}
+  .sync-status.err{color:var(--clay);}
+  #src-refresh{white-space:nowrap;}
+
+  /* ---------- Table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--slate);
+    padding:8px 10px; border-bottom:1px solid var(--line-strong); cursor:pointer; user-select:none; white-space:nowrap;
+  }
+  th:hover{color:var(--ochre);}
+  th.sorted::after{content:" ▾"; color:var(--ochre);}
+  th.sorted.asc::after{content:" ▴"; color:var(--ochre);}
+  td{padding:9px 10px; border-bottom:1px solid var(--line); color:var(--cream-dim); white-space:nowrap;}
+  tr:hover td{background:rgba(245,239,226,0.03); color:var(--cream);}
+  td.num{font-family:'IBM Plex Mono', monospace; color:var(--cream);}
+  .region-chip{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; padding:2px 0;
+  }
+  .region-chip .sw{width:7px;height:7px;border-radius:50%;}
+  .bar-cell{position:relative;}
+  .bar-track{height:6px; background:rgba(245,239,226,0.08); border-radius:4px; overflow:hidden; width:80px;}
+  .bar-fill{height:100%; background:var(--ochre); border-radius:4px;}
+  .table-scroll{overflow-x:auto;}
+
+  /* ---------- Activity Log ---------- */
+  .log{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .log-item{
+    border:1px solid var(--line); border-radius:12px; background:var(--ink-3); overflow:hidden;
+  }
+  .log-head{
+    display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer;
+  }
+  .log-head .swatch{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .log-head .meta{flex:1; min-width:0;}
+  .log-head .title{font-size:13.5px; color:var(--cream); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .log-head .sub{font-size:11.5px; color:var(--slate); margin-top:2px;}
+  .log-head .nums{
+    display:flex; gap:14px; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cream-dim);
+    flex-shrink:0;
+  }
+  .log-head .nums span b{color:var(--cream);}
+  .log-head .chev{color:var(--slate); font-size:11px; transition:.2s; flex-shrink:0;}
+  .log-item.open .chev{transform:rotate(180deg);}
+  .log-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease; padding:0 14px;
+  }
+  .log-item.open .log-body{max-height:400px; padding:0 14px 16px;}
+  .log-body-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; font-size:12.5px; line-height:1.55; padding-top:8px; border-top:1px solid var(--line);}
+  @media(max-width:640px){.log-body-grid{grid-template-columns:1fr;}}
+  .log-body-grid .k{font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--ochre); margin-bottom:3px;}
+  .log-body-grid .v{color:var(--cream-dim);}
+  .officer-tag{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--acacia); margin-top:10px;}
+
+  footer{
+    margin-top:40px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--slate); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  footer a{color:var(--ochre); text-decoration:none;}
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--ink-3); border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <div class="eyebrow"><span class="dot-live"></span> Field Console · Live Sync Enabled</div>
+      <h1>Edukans <em>LiT</em> — Activity Console</h1>
+      <div class="sub">Community engagement &amp; school leadership trainings across Uganda. Tracking dialogue facilitation, BoG/PTA capacity building, and local government mobilisation, quarter to date.</div>
+    </div>
+    <div class="clockbox">
+      <div class="time" id="clock">00:00:00</div>
+      <div class="lbl" id="clockdate">—</div>
+      <div class="lbl" style="margin-top:6px;">Last submission sync: <span id="lastsync" style="color:var(--acacia);">—</span></div>
+    </div>
+  </header>
+
+  <div class="syncbar">
+    <div class="syncbar-row">
+      <div class="fgroup" style="flex:1; min-width:220px;">
+        <label>Live data source (raw.githubusercontent.com URL)</label>
+        <input type="text" id="src-url" placeholder="https://raw.githubusercontent.com/USER/REPO/main/data/activities.json" />
+      </div>
+      <button class="reset-btn" id="src-connect">Connect</button>
+      <button class="reset-btn" id="src-refresh" title="Fetch now">↻ Refresh now</button>
+      <div class="sync-status" id="sync-status">Showing bundled snapshot (49 records)</div>
+    </div>
+  </div>
+
+  <div class="ticker-outer">
+    <div class="ticker-tag"><span class="dot-live" id="ticker-dot"></span> Field Feed</div>
+    <div class="ticker-track" id="ticker"></div>
+  </div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="filterbar">
+    <div class="fgroup">
+      <label>Region</label>
+      <select id="f-region"><option value="">All regions</option></select>
+    </div>
+    <div class="fgroup">
+      <label>District</label>
+      <select id="f-district"><option value="">All districts</option></select>
+    </div>
+    <div class="fgroup">
+      <label>Officer</label>
+      <select id="f-officer"><option value="">All officers</option></select>
+    </div>
+    <div class="fgroup">
+      <label>Search venue / activity</label>
+      <input type="text" id="f-search" placeholder="e.g. Council hall, dialogue..." />
+    </div>
+    <button class="reset-btn" id="f-reset">Reset filters</button>
+    <div class="filter-count" id="f-count"></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h3>Reach by region</h3>
+      <div class="panel-sub">Participants trained vs. activities run, by region</div>
+      <div class="chart-holder tall"><canvas id="chartRegion"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Gender &amp; inclusion split</h3>
+      <div class="panel-sub">Of <span id="genderTotalLabel">—</span> participants reached</div>
+      <div class="chart-holder tall"><canvas id="chartGender"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid3">
+    <div class="panel">
+      <h3>Weekly momentum</h3>
+      <div class="panel-sub">Activities &amp; participants over time</div>
+      <div class="chart-holder"><canvas id="chartTrend"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Participant categories</h3>
+      <div class="panel-sub">Who's in the room</div>
+      <div class="chart-holder"><canvas id="chartCategory"></canvas></div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
+    <h3>District leaderboard</h3>
+    <div class="panel-sub">Click a column to sort · <span id="districtCountLabel"></span> districts in view</div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-key="district">District</th>
+            <th data-key="region">Region</th>
+            <th data-key="activities">Activities</th>
+            <th data-key="total">Participants</th>
+            <th data-key="female">Female %</th>
+            <th data-key="pwd">PWD reached</th>
+            <th>Share of total</th>
+          </tr>
+        </thead>
+        <tbody id="districtTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
+    <h3>Activity log</h3>
+    <div class="panel-sub"><span id="logCountLabel"></span> submissions · newest first · click a row to expand</div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <footer>
+    <div>Edukans LiT Field Activity Console · Built from ODK/KoBo activity submissions</div>
+    <div>Snapshot generated from uploaded dataset — connect a live ODK/KoBo endpoint to stream new submissions automatically</div>
+  </footer>
+
+</div>
+
+<script id="activity-data" type="application/json">[{"date": "2026-06-02", "region": "Eastern", "district": "Manafwa", "subcounty": "Manafwa Town Council", "venue": "Manafwa District Head Quarters - Council Boardroom", "activity_type": "Training", "description": "Train local government representatives, school boards/PTA, and FBOs on community participation & engagement. - TOT", "participant_category": "Local Government Leaders", "male": 7, "female": 8, "pwd_male": 1, "pwd_female": 0, "total": 15, "feedback": "1.\tBuwagogo Secondary School, Bubulo \u2013 doesnt exist in the district 2.\tThe district education team raised a concern that the only Girls school in the district (Bubulo Girls High School) was left out of the leaders in tea", "challenges": "No major challenge was noted during the training. However, the team noted that the proposed transport refund of between 10,000Ugx - 20,000Ugx for participants during cascade is low and may affect travels of some particip", "recommendations": "Cascade is scheduled for 17th &18th June 2026. It will take place in 5 centers supported by 10 ToTs", "officer": "Ojok Phillip Awany", "lat": 0.952911, "lon": 34.274633, "submitted": "2026-06-03 07:08"}, {"date": "2026-05-29", "region": "Eastern", "district": "Mbale", "subcounty": "Mbale Town Council", "venue": "Mbale Education Department - ICT Hub", "activity_type": "Training", "description": "Train local government representatives, school boards/PTA, and FBOs on community participation and engagement", "participant_category": "Local Government Leaders", "male": 9, "female": 7, "pwd_male": 0, "pwd_female": 0, "total": 16, "feedback": "1.\tIt was noted that 6 selected schools (Mbale Parents School, Mount Masaba High School,Mbale, Oakwood High School, St.Mary'S Secondary School,Mbale, Uni-Link High School,Mbale, Maluku Secondary School,Mbale) are in Mbal", "challenges": "There are wide distances between project selected schools which may affect training delivery time during cascade", "recommendations": "Cascade is scheduled in the week of 22nd \u2013 26th June 2026. The 17 schools have been clustered into 8 training centers.", "officer": "Ojok Phillip Awany", "lat": 1.070383, "lon": 34.169683, "submitted": "2026-06-04 03:52"}, {"date": "2026-05-20", "region": "Northern", "district": "Kitgum", "subcounty": "", "venue": "Kitgum District local government headquarters health Boardroom", "activity_type": "Training", "description": "TOT on community engagement and participation for LG representative ( Education staff and community development officers)", "participant_category": "Local Government Leaders", "male": 6, "female": 3, "pwd_male": 0, "pwd_female": 0, "total": 9, "feedback": "LIT program is timely in the district will help to address the high dropout rates for girls", "challenges": "conducting a training  within the district venues is abit challenging as officers keep moving out to attend to other duties.", "recommendations": "Effective trainings to be organised outside the district headqauarters to ensure participants fully  concentrate in the training.", "officer": "Frederick Businge", "lat": 3e-06, "lon": 1e-06, "submitted": "2026-06-06 08:02"}, {"date": "2026-05-28", "region": "Northern", "district": "Gulu", "subcounty": "", "venue": "Gulu district headquaters", "activity_type": "Training", "description": "TOT for District representatives ( Education staff and community development officers)", "participant_category": "Local Government Leaders", "male": 5, "female": 8, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "Overal perfomance at secondary school in Gulu district is not yet good, Lit has come to suppport close these gaps.The district is committed to supporting and collaborating with the LIT partners to ensure there is improve", "challenges": "Late start of the training as some participants arrived late.", "recommendations": "When resources are available we shuld have such trainings as resisdential.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 08:13"}, {"date": "2026-05-26", "region": "Northern", "district": "Madi-Okollo", "subcounty": "", "venue": "District headquarters - council hall", "activity_type": "Training", "description": "TOT training for local government representatives ( Education and community development staff)", "participant_category": "Local Government Leaders", "male": 10, "female": 3, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "The district acknowledges very poor performance at all levels from primary to secondary, sighting issues of low transition, retention and completion. The community has very poor attitude towards education and most parent", "challenges": "Late coming of participants especially on day one of the training. Some conflicting activities in the district such as another partner was doing an inception meeting at the same time which took away some key stakeholders", "recommendations": "Holding the training in a separate venue away from the district to ensure concentration.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 08:28"}, {"date": "2026-06-04", "region": "Northern", "district": "Adjumani", "subcounty": "", "venue": "District headquarters- council hall", "activity_type": "Training", "description": "TOT training for local government representatives (Education and community development officers)", "participant_category": "Local Government Leaders", "male": 8, "female": 3, "pwd_male": 0, "pwd_female": 1, "total": 11, "feedback": "Adjumani has many out of school children, out of the 5000 children of secondary school going age on average is only 2000 enrolled meaning many are still not in school and more especially girls. The LIT program  is welcom", "challenges": "No challenges were experienced the training went on well.", "recommendations": "Continuous engagement of the stakeholders to ensure that big number of students out of school are supported to enroll back.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 08:38"}, {"date": "2026-06-04", "region": "Northern", "district": "Kitgum", "subcounty": "Kitgum Matidi", "venue": "Kitgum Matidi Secondary school", "activity_type": "Training", "description": "Training BOG/PTA and representatives of faith-based organizations on community engagement and participation. on community", "participant_category": "Faith Leaders BoG / PTA", "male": 18, "female": 6, "pwd_male": 1, "pwd_female": 1, "total": 24, "feedback": "The training has empowered us as BOG/PTA and FBO to organise dialogue meetings", "challenges": "Participants traveling long distances yet transport refund inadequate.", "recommendations": "Provide adequate transport refund to participants", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 09:10"}, {"date": "2026-06-06", "region": "Northern", "district": "Kitgum", "subcounty": "Lagoro S/C", "venue": "Lagoro seed secondary school.", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs on community engagement and participation", "participant_category": "Faith Leaders BoG / PTA", "male": 15, "female": 5, "pwd_male": 0, "pwd_female": 0, "total": 20, "feedback": "Information on the competence based curricullum was key for the BOG/PTA  members this will pave way for successful monitoring and support to the schools.", "challenges": "Some participants literacy levels are low, so writing even the attendance list becomes a problem", "recommendations": "The literate participans to help those who cannot write well.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 09:19"}, {"date": "2026-06-04", "region": "Northern", "district": "Madi-Okollo", "subcounty": "Okollo town council", "venue": "Okollo Town council hall.", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs on community engagement and participation", "participant_category": "Faith Leaders BoG / PTA", "male": 12, "female": 9, "pwd_male": 1, "pwd_female": 1, "total": 21, "feedback": "Partticipants were happy to understand their roles and responsibilities, the also appreciated the Edukans for the skills and knowledge passed to them on organising dialogue meetings.", "challenges": "There were not much challenges experienced,, however distances travelled to training ground Vs transport refund", "recommendations": "Provide adequate transport refund to participants.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 09:26"}, {"date": "2026-06-04", "region": "Northern", "district": "Kitgum", "subcounty": "Omiya Anyima", "venue": "Omiya Anyima Secondary school.", "activity_type": "Training", "description": "Training of BOG/PTA and FBO on community engagement and participation", "participant_category": "Faith Leaders BoG / PTA", "male": 20, "female": 5, "pwd_male": 3, "pwd_female": 1, "total": 25, "feedback": "The parents and community members need to be vigorously mobilized to ensure girls are enrolled back to school. There are many girls being taken to work as maids, others being married off by their parents for money.", "challenges": "The training went on well without major challenges", "recommendations": "Continue engaging the stakeholders in the community to ensure girls are enerolled back to school", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 09:40"}, {"date": "2026-06-04", "region": "Northern", "district": "Kitgum", "subcounty": "Orom subcounty", "venue": "Orom seed secondary school", "activity_type": "Training", "description": "Training the BOG/PTA and FBO on community engagement and participation", "participant_category": "Faith Leaders BoG / PTA", "male": 20, "female": 5, "pwd_male": 0, "pwd_female": 0, "total": 25, "feedback": "The BOG/PTA appreciated the training on competence-based curriculum as it has been difficult for them to monitor and support the school leaders and teachers.", "challenges": "No challenges exeperienced", "recommendations": "The participants asked for more trainings as this will capacitate them to effectively support secondary schools.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-06 09:47"}, {"date": "2026-06-04", "region": "Northern", "district": "Madi-Okollo", "subcounty": "Pawor", "venue": "St Francis of Assisi Secondary school", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs in community engagement and participation ( Organising dialogue meetings)", "participant_category": "Faith Leaders BoG / PTA", "male": 22, "female": 15, "pwd_male": 1, "pwd_female": 0, "total": 37, "feedback": "The training is very useful to use the knowledge and skills gained in facilitating dialogue meetings will help us to mobilise parents to support children attain education. Most girls in Madi Okollo are out of school due ", "challenges": "No major challenges aaprt from soem parents participants turning up late for the trainings.", "recommendations": "Mobilize the participants early enough to give them adequate time to prepare for the trainings", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-08 14:27"}, {"date": "2026-06-08", "region": "Central", "district": "Buikwe", "subcounty": "NA", "venue": "Collins Hotel", "activity_type": "Training", "description": "Training of local government representatives school boards / PTA and FBOs on community participants engagement", "participant_category": "Local Government Leaders", "male": 11, "female": 6, "pwd_male": 0, "pwd_female": 0, "total": 17, "feedback": "The transport was not sufficient to and for mukono", "challenges": "Coordination costs airtime required", "recommendations": "Coordination costs airtime required", "officer": "Ojok Phillip Awany", "lat": 0.3984199, "lon": 32.6164786, "submitted": "2026-06-09 20:10"}, {"date": "2026-06-05", "region": "Eastern", "district": "Busia", "subcounty": "Busia DLG", "venue": "Busia District Boardroom", "activity_type": "Training", "description": "Train local government representatives, school boards/PTA, and FBOs on community participation & engagement. - ToT", "participant_category": "Local Government Leaders", "male": 15, "female": 9, "pwd_male": 1, "pwd_female": 0, "total": 24, "feedback": "1.\tIt was noted that Dabani Secondary School changed its name to St. Joseph Dabani High School, Lwagula Memorial Secondary Scho0Ol,Busia & St. John\u2019s Secondary School, Busia have since closed. Thus, Busia has 28/31 selec", "challenges": "Busia has both the district and Municipality. This led to increment of ToTs participants", "recommendations": "Conduct radio talk show to address pertinent issues affecting girls' education in the district", "officer": "Ojok Phillip Awany", "lat": 1.071367, "lon": 34.169429, "submitted": "2026-06-10 03:18"}, {"date": "2026-05-29", "region": "Central", "district": "Kassanda", "subcounty": "", "venue": "Makanhill", "activity_type": "Training", "description": "Training of local government representatives", "participant_category": "Local Government Leaders", "male": 4, "female": 7, "pwd_male": 1, "pwd_female": 0, "total": 11, "feedback": "More time should be given for the comprehensive completion of the content", "challenges": "Transport refund", "recommendations": "More time allocated for the training ", "officer": "Ojok Phillip Awany", "lat": 0.3424852, "lon": 32.6111661, "submitted": "2026-06-10 14:11"}, {"date": "2026-05-29", "region": "Central", "district": "Mubende", "subcounty": "", "venue": "Makanhill", "activity_type": "Training", "description": "Training of local government representatives ", "participant_category": "Local Government Leaders", "male": 10, "female": 4, "pwd_male": 0, "pwd_female": 1, "total": 14, "feedback": "Distance ", "challenges": "Transport refund", "recommendations": "Better engagement in turns of days", "officer": "Ojok Phillip Awany", "lat": 0.3424822, "lon": 32.6111946, "submitted": "2026-06-10 14:11"}, {"date": "2026-05-29", "region": "Central", "district": "Mityana", "subcounty": "", "venue": "Makanhill ", "activity_type": "Training", "description": "Training of local government ", "participant_category": "Local Government Leaders", "male": 9, "female": 4, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "Time for the workshop was limited ", "challenges": "None", "recommendations": "More days for the training ", "officer": "Ojok Phillip Awany", "lat": 0.3424736, "lon": 32.611177, "submitted": "2026-06-10 14:11"}, {"date": "2026-06-02", "region": "Central", "district": "Butambala", "subcounty": "", "venue": "Homeland", "activity_type": "Training", "description": "Training of local government ", "participant_category": "Local Government Leaders", "male": 10, "female": 3, "pwd_male": 1, "pwd_female": 0, "total": 13, "feedback": "Limited time for practical ", "challenges": "None", "recommendations": "More days for the training ", "officer": "Ojok Phillip Awany", "lat": 0.3424853, "lon": 32.6111627, "submitted": "2026-06-10 14:11"}, {"date": "2026-05-26", "region": "Central", "district": "Nakasongola", "subcounty": "", "venue": "Luwero", "activity_type": "Training", "description": "Training of local government representatives ", "participant_category": "Local Government Leaders", "male": 6, "female": 7, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "More time", "challenges": "Facilitatation", "recommendations": "More days for the training ", "officer": "Ojok Phillip Awany", "lat": 0.3424882, "lon": 32.6111744, "submitted": "2026-06-10 14:11"}, {"date": "2026-05-28", "region": "Central", "district": "Luwero", "subcounty": "", "venue": "Luwero", "activity_type": "Training", "description": "Training of local government representatives ", "participant_category": "Local Government Leaders", "male": 3, "female": 5, "pwd_male": 0, "pwd_female": 0, "total": 8, "feedback": "More days ", "challenges": "Transport insufficient ", "recommendations": "More days and money", "officer": "Ojok Phillip Awany", "lat": 0.3424833, "lon": 32.6111688, "submitted": "2026-06-10 14:11"}, {"date": "2026-06-05", "region": "Central", "district": "Kayunga", "subcounty": "", "venue": "Collins hotel", "activity_type": "Training", "description": "Training of local government representatives ", "participant_category": "Local Government Leaders", "male": 4, "female": 8, "pwd_male": 0, "pwd_female": 0, "total": 12, "feedback": "Distance from Kayunga", "challenges": "Transport facilitatation", "recommendations": "More time n money", "officer": "Ojok Phillip Awany", "lat": 0.3424851, "lon": 32.6111697, "submitted": "2026-06-10 14:11"}, {"date": "2026-06-12", "region": "Eastern", "district": "Tororo", "subcounty": "Tororo Minicipality", "venue": "Tororo District - Department of Special Needs", "activity_type": "Training", "description": "2.5.1 \tTrain local government representatives, school boards/PTA, and FBOs on community participation and engagement", "participant_category": "Local Government Leaders", "male": 6, "female": 5, "pwd_male": 0, "pwd_female": 0, "total": 11, "feedback": "2 schools (Tororo Central Secondary School & Kidoko Modern Secondary School,Tororo) are defunct.", "challenges": "There was poor turn up of participants for both day 1 & 2 due to overriding end of financial year activities in the district. This led to cacellation of Day 2 training since only 6/20 participants turned up.", "recommendations": "Plan and remobilize participants for a 1-day training to cover the gap", "officer": "Ojok Phillip Awany", "lat": 1.071367, "lon": 34.169429, "submitted": "2026-06-15 05:49"}, {"date": "2026-06-10", "region": "Eastern", "district": "Bulambuli", "subcounty": "Muyembe Town Council", "venue": "Bulambuli DLG - Chairmans Board Room", "activity_type": "Training", "description": "2.5.1 \tTrain local government representatives, school boards/PTA, and FBOs on community participation and engagement", "participant_category": "Local Government Leaders", "male": 11, "female": 6, "pwd_male": 0, "pwd_female": 2, "total": 17, "feedback": "All selected schools are available and active", "challenges": "No key challenge was noted", "recommendations": "Cascade was scheduled for the week of 22 - 27th June 2026", "officer": "Ojok Phillip Awany", "lat": 1.071367, "lon": 34.169429, "submitted": "2026-06-15 05:59"}, {"date": "2026-06-11", "region": "Northern", "district": "Oyam", "subcounty": "Omiya Anyima", "venue": "Oyam district headquarters - Education hall.", "activity_type": "Training", "description": "Training of local government representatives on community engagement and participation ( TOT ).", "participant_category": "Local Government Leaders", "male": 8, "female": 5, "pwd_male": 2, "pwd_female": 0, "total": 13, "feedback": "The district has been struggling with supervising the new competence based curricullum for secondary, the training is timely as it has equiped the participants with knowledge and skills on CBC,ITis now going to be easy f", "challenges": "District was engaged in many activities including interviewing the teachers, DEC members introductory meeting , all these made participants walk in and out of the training.", "recommendations": "Organise next training in separate location outside the district headquarters to endure participants concentration.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 09:59"}, {"date": "2026-06-11", "region": "Northern", "district": "Gulu", "subcounty": "paicho", "venue": "Subcounty headquarters", "activity_type": "Training", "description": "Training BOG/PTA and FBOs on community engagement and participation", "participant_category": "Faith Leaders BoG / PTA", "male": 17, "female": 8, "pwd_male": 1, "pwd_female": 0, "total": 25, "feedback": "Training BOG/PTA on their roles and responsibilities in CBC is welcome move since their election they had never recieved any training and this has been complicatint their work.", "challenges": "Long distances travelled by the participants delayed start of the trainings.", "recommendations": "Train at the school level to cut on distances travelled by the BOG/PTA members.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 10:30"}, {"date": "2026-06-11", "region": "Northern", "district": "Gulu", "subcounty": "Patiko Subcounty", "venue": "Heath centre board room", "activity_type": "Training", "description": "Training BOG/PTA and FBOs in community engagement and participation ( Dialogue meetings facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 18, "female": 9, "pwd_male": 2, "pwd_female": 1, "total": 27, "feedback": "BOG/PTA have not had opportunity to look at these secondary school policies yet they contain very good information especially on how much government supports secondary schools.", "challenges": "Long distance traveled to the training venue yet limited transport refund for participants.", "recommendations": "The district education office to orient more the BOG/PTA on the secondary school policies and continue organising capacity building sessions on the roles and responsibilities.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 10:48"}, {"date": "2026-06-11", "region": "Northern", "district": "Gulu", "subcounty": "Unyama", "venue": "subcounty headquarters", "activity_type": "Training", "description": "Training the BOG/PTA and FBO in community engagement and participation ( Dialogue meeting facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 14, "female": 10, "pwd_male": 1, "pwd_female": 0, "total": 24, "feedback": "Since election the BOG members have not been oriented on their roles and repsonsibilities and also on the new lower secondary school competence based curricullum, The training of dialogue facilitation will go along way i", "challenges": "Inadequate transport refund for participants", "recommendations": "Edukans to continue training BOG/PTA to strengthen their capacity to manage schools.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 11:06"}, {"date": "2026-06-10", "region": "Northern", "district": "Gulu", "subcounty": "Bungatira", "venue": "subcounty headquarters", "activity_type": "Training", "description": "training of BOG/PTA and FBOs in community engagemen and participation ( Dialogue facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 13, "female": 7, "pwd_male": 0, "pwd_female": 0, "total": 20, "feedback": "It was energising to learn about the new comptenece based curricullum for secondary school, the different policies of government on secondary education and the roles and responsibilities for BOG and parents in CBC.", "challenges": "Late comming of participants due to long distances to the training point.", "recommendations": "organize trainings at school level rather than subcounty.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 12:03"}, {"date": "2026-06-11", "region": "Northern", "district": "Madi-Okollo", "subcounty": "Inde", "venue": "Ogoko seed", "activity_type": "Training", "description": "Training BOG/PTA and FBOs in community engagement and participation ( Dialogue facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 20, "female": 6, "pwd_male": 1, "pwd_female": 0, "total": 26, "feedback": "Madi Okollo district school  performance at all levels is the worst in the country, many children including girls are out of school due to parents negligence and bad attitude towards education. This training will capacit", "challenges": "Participants coming late due to long distances of travel.", "recommendations": "Continue to engage the different stakeholders in Madi Okollo to get everyone on board this will help in elavating in educaion.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 12:12"}, {"date": "2026-06-11", "region": "Northern", "district": "Madi-Okollo", "subcounty": "Rhino camp town council", "venue": "Rhino camp sec school", "activity_type": "Training", "description": "training of BOG/PTA and FBOs in community engagement and participation ( Dialogue facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 17, "female": 5, "pwd_male": 0, "pwd_female": 0, "total": 22, "feedback": "Limited knowledge about the BOG /PTA roles and responsibilities, High drop out of students due to engaging in fishing activities and girls getting married early enough due to cultural ceremonies like marriages that take ", "challenges": "Little transport refund for the BOG members despite long distances being traveled.", "recommendations": "improve on participants facilitation", "officer": "Frederick Businge", "lat": 1e-05, "lon": 1e-06, "submitted": "2026-06-16 12:27"}, {"date": "2026-06-12", "region": "Northern", "district": "Madi-Okollo", "subcounty": "Uleppi", "venue": "Uleppi secondary school", "activity_type": "Training", "description": "Training BOG/PTA and FBOs in community engagement and participation ( Dialogue facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 15, "female": 4, "pwd_male": 1, "pwd_female": 0, "total": 19, "feedback": "Rampant drop out students due to parents' failure to provide them with basic scholarstic materials including inability by parents to take control of their children i.e children going for discos, markets and missing schoo", "challenges": "No major challenges encoutered dueing the training apart from participants complaining about low transport refund.", "recommendations": "Increase on the trainings days for participants to be able to grasp the content well.", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 12:39"}, {"date": "2026-06-12", "region": "Northern", "district": "Madi-Okollo", "subcounty": "Offaka", "venue": "Offaka secondary school", "activity_type": "Training", "description": "Traning BOG/PTA in community engagement and participation ( Dialogue meeting facilitation skills)", "participant_category": "Faith Leaders BoG / PTA", "male": 12, "female": 9, "pwd_male": 1, "pwd_female": 0, "total": 21, "feedback": "WhenCBC was introduced we thought government had diluted education now, we had opted to take out of school our children, but we now realise how this curricullum is the best. we as parents we are going to work hard to sup", "challenges": "Late start of the training and few days allocated for the training.", "recommendations": "Increase the days for the training atleast to 3 days minimum", "officer": "Frederick Businge", "lat": 1e-06, "lon": 1e-06, "submitted": "2026-06-16 12:56"}, {"date": "2026-06-28", "region": "Western", "district": "Ibanda", "subcounty": "", "venue": "Ibanda District water Boardroom ", "activity_type": "Training", "description": "TOT training on community mobilization and engagement for DLGs staff to support Education.", "participant_category": "Local Government Leaders", "male": 9, "female": 4, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "Participants actively participated in the trainings and are ready to roll out the training to BOGs, PTAs and FBOs.", "challenges": "", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.7828941, "lon": 30.9471258, "submitted": "2026-06-17 13:54"}, {"date": "2026-07-02", "region": "Western", "district": "Mitooma", "subcounty": "", "venue": "Mitooma district council Hall", "activity_type": "Training", "description": "TOT on community mobilization and engagement for DLGs staff to support Education.", "participant_category": "Local Government Leaders", "male": 5, "female": 8, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "The mapped out schools are far in terms of distance.", "challenges": "", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.7828936, "lon": 30.9471259, "submitted": "2026-06-17 14:02"}, {"date": "2026-07-05", "region": "Western", "district": "Bushenyi", "subcounty": "", "venue": "Bushenyi district Hqtrs council Chambers ", "activity_type": "Training", "description": "TOT on community mobilization and engagement for DLGs staff to support Education.", "participant_category": "Local Government Leaders", "male": 7, "female": 6, "pwd_male": 0, "pwd_female": 0, "total": 13, "feedback": "Participants were enthusiastic and active during the session.", "challenges": "Some 2 secondary schools mapped out rebranded ", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.782896, "lon": 30.9471246, "submitted": "2026-06-17 14:09"}, {"date": "2026-07-11", "region": "Western", "district": "Ntungamo", "subcounty": "", "venue": "Planning Unit Boardroom ", "activity_type": "Training", "description": "TOT on community mobilization and engagement for DLGs staff to support Education.", "participant_category": "Local Government Leaders", "male": 12, "female": 11, "pwd_male": 0, "pwd_female": 1, "total": 23, "feedback": "participants were active and fully attended the training.", "challenges": "Some zoned training venues for cascade and schools distance are far.", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.7829181, "lon": 30.9471257, "submitted": "2026-06-17 14:14"}, {"date": "2026-06-11", "region": "Western", "district": "Mitooma", "subcounty": "", "venue": "Kiyanga Vocational S.S", "activity_type": "Training", "description": "Training for BOGs and PTAs on community mobilization and engagement to support Education.", "participant_category": "BoG / PTA", "male": 13, "female": 9, "pwd_male": 0, "pwd_female": 0, "total": 22, "feedback": "The BOGs and PTAs appreciated taking them through their rolesand attendance was 100%", "challenges": "Some members came late for the training.", "recommendations": "Increase awareness of government education policies with in parents and communities.", "officer": "Gonzaga Kaswarra", "lat": -0.5876476, "lon": 30.6528846, "submitted": "2026-06-19 07:31"}, {"date": "2026-06-11", "region": "Central", "district": "Butambala", "subcounty": "Kibibi Town Council ", "venue": "Luutu Memorial College", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs", "participant_category": "Faith Leaders BoG / PTA", "male": 18, "female": 16, "pwd_male": 0, "pwd_female": 1, "total": 34, "feedback": "Training was crucial in reminding the different stakeholders their roles ", "challenges": "Late coming of participants ", "recommendations": "More trainings of such nature should be organised regularly ", "officer": "Kasiita John", "lat": 0.342508, "lon": 32.6111462, "submitted": "2026-06-19 10:27"}, {"date": "2026-06-11", "region": "Western", "district": "Mitooma", "subcounty": "Kabira Town Council ", "venue": "Kabira Town Council Hall ", "activity_type": "Training", "description": "Training BOGs, FBOs and PTAs on community mobilization and engagement to support Education.", "participant_category": "BoG / PTA Faith Leaders", "male": 32, "female": 31, "pwd_male": 0, "pwd_female": 0, "total": 63, "feedback": "There was active participation during the training session.", "challenges": "Most participants missed signing the attendance.", "recommendations": "Training TOTs on the need to emphasize accuracy when filling attendance lists.", "officer": "Gonzaga Kaswarra", "lat": -0.5952496, "lon": 30.6575479, "submitted": "2026-06-19 21:53"}, {"date": "2026-06-11", "region": "Western", "district": "Mitooma", "subcounty": "", "venue": "Mahugye Church of Uganda", "activity_type": "Training", "description": "Training for BOGs FBOs and PTAs on community mobilization and engagement to support Education.", "participant_category": "Faith Leaders BoG / PTA", "male": 32, "female": 13, "pwd_male": 0, "pwd_female": 1, "total": 45, "feedback": "The participants were active and passionate about the initiative especially getting to know their roles and responsibilities ", "challenges": "", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.5952516, "lon": 30.6575468, "submitted": "2026-06-19 22:05"}, {"date": "2026-06-11", "region": "Western", "district": "Mitooma", "subcounty": "", "venue": "Mitooma Town Council Hall ", "activity_type": "Training", "description": "Training for BOGs FBOs and PTAs on community mobilization and engagement to support Education.", "participant_category": "Faith Leaders BoG / PTA", "male": 26, "female": 29, "pwd_male": 1, "pwd_female": 0, "total": 55, "feedback": "Foundation bodies discovered the need for their active involvement and chosing competent school leaders to manage their schools.", "challenges": "", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.5952496, "lon": 30.6575479, "submitted": "2026-06-19 22:17"}, {"date": "2026-06-11", "region": "Western", "district": "Mitooma", "subcounty": "", "venue": "Kanyabwanga Sub County Headquarters ", "activity_type": "Training", "description": "Training for BOGs FBOs and PTAs on community mobilization and engagement to support Education.", "participant_category": "Faith Leaders BoG / PTA", "male": 17, "female": 5, "pwd_male": 0, "pwd_female": 0, "total": 22, "feedback": "participants actively participated and attendance was 100%", "challenges": "", "recommendations": "", "officer": "Gonzaga Kaswarra", "lat": -0.5952508, "lon": 30.6575478, "submitted": "2026-06-19 22:24"}, {"date": "2026-06-12", "region": "Central", "district": "Butambala", "subcounty": "Kibibi ", "venue": "Kibibi Parents SS", "activity_type": "Training", "description": "Training of BOG/PTA", "participant_category": "BoG / PTA Faith Leaders", "male": 22, "female": 13, "pwd_male": 1, "pwd_female": 0, "total": 35, "feedback": "BOG requested for more trainings ", "challenges": "Time management \nThe days were not enough to cover all, the content  ", "recommendations": "Same trainings to be cascaded to local leaders", "officer": "Etiang James", "lat": 0.342512, "lon": 32.6111435, "submitted": "2026-06-22 11:48"}, {"date": "2026-06-12", "region": "Central", "district": "Butambala", "subcounty": "Kibibi Town Council ", "venue": "Kibibi SS", "activity_type": "Training", "description": "Training of BOG/PTA and FBO", "participant_category": "BoG / PTA Faith Leaders", "male": 22, "female": 13, "pwd_male": 0, "pwd_female": 0, "total": 35, "feedback": "Parents welcomed the program \nTraining should be taken down to the field ", "challenges": "Transport refund very minimal in relation to the distances ", "recommendations": "Cascading to the lower level communities", "officer": "Matovu ABUDU", "lat": 0.3424956, "lon": 32.6111451, "submitted": "2026-06-22 11:48"}, {"date": "2026-06-12", "region": "Central", "district": "Butambala", "subcounty": "Kibibi Town Council ", "venue": "Kibibi Muslim Sec School", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs ", "participant_category": "Faith Leaders BoG / PTA", "male": 16, "female": 19, "pwd_male": 0, "pwd_female": 0, "total": 35, "feedback": "Great training especially the CBC component ", "challenges": "No participants manuals ", "recommendations": "Translate the manual in to the local language ", "officer": "Ssali Fred", "lat": 0.342494, "lon": 32.6111428, "submitted": "2026-06-22 11:48"}, {"date": "2026-06-17", "region": "Central", "district": "Butambala", "subcounty": "Kibibi Town Council ", "venue": "Rasul Akram Islamic Sec School ", "activity_type": "Training", "description": "Training of BOG/ PTA", "participant_category": "BoG / PTA Faith Leaders", "male": 19, "female": 16, "pwd_male": 0, "pwd_female": 0, "total": 35, "feedback": "Appreciated the CBC ", "challenges": "Participants were not punctual ", "recommendations": "Training manuals ", "officer": "Ssali Fred", "lat": 0.3425002, "lon": 32.611141, "submitted": "2026-06-22 11:48"}, {"date": "2026-06-17", "region": "Central", "district": "Butambala", "subcounty": "Kibibi Town Council ", "venue": "Kibibi central college ", "activity_type": "Training", "description": "Training of BOG/PTA AND FBOs", "participant_category": "BoG / PTA Faith Leaders", "male": 20, "female": 15, "pwd_male": 1, "pwd_female": 0, "total": 35, "feedback": "Training materials was very valuable ", "challenges": "Time was not adequate to cover all the content", "recommendations": "More trainings of this kind among the communities ", "officer": "yoga Faruok", "lat": 0.3984152, "lon": 32.6166281, "submitted": "2026-06-23 17:21"}, {"date": "2026-06-11", "region": "Central", "district": "Butambala", "subcounty": "Kibibi Town Council", "venue": "Kibibi Standard SS", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs", "participant_category": "Faith Leaders BoG / PTA", "male": 18, "female": 16, "pwd_male": 0, "pwd_female": 2, "total": 34, "feedback": "The dialogues should have an expert in CBC", "challenges": "BOG and PTA were not fully constituted", "recommendations": "Head teachers should be apart of these engagements", "officer": "Kayongo Sam", "lat": 56, "lon": 56, "submitted": "2026-06-30 18:17"}, {"date": "2026-06-17", "region": "Central", "district": "Kassanda", "subcounty": "Myanzi Subcounty", "venue": "Lake view Sec school", "activity_type": "Training", "description": "Training of BOG/PTA and FBOs", "participant_category": "Faith Leaders BoG / PTA", "male": 19, "female": 10, "pwd_male": 0, "pwd_female": 0, "total": 29, "feedback": "Participants appreciated the training on CBC", "challenges": "", "recommendations": "Requested for simplified information on the CBC", "officer": "Ssebulime Gonzaga", "lat": 5, "lon": 7, "submitted": "2026-06-30 18:27"}]</script>
+<script>
+(function(){
+  const SNAPSHOT = JSON.parse(document.getElementById('activity-data').textContent);
+  let RAW = SNAPSHOT;
+  let pollTimer = null;
+
+  const REGION_COLORS = {
+    "Eastern": "#D08A3E",
+    "Northern": "#5C9271",
+    "Central": "#C2604B",
+    "Western": "#8CA0B8",
+    "Unknown": "#6b7280"
+  };
+  const CREAM = "#F5EFE2";
+  const CREAM_DIM = "#C9C0AC";
+  const GRID = "rgba(245,239,226,0.08)";
+
+  Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+  Chart.defaults.color = CREAM_DIM;
+
+  // ---------------- Clock ----------------
+  function tickClock(){
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB');
+    document.getElementById('clockdate').textContent = now.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  function updateLastSync(){
+    if(!RAW.length) return;
+    const latestSubmission = RAW.reduce((a,b)=> ((a.submitted||"") > (b.submitted||"") ? a : b));
+    document.getElementById('lastsync').textContent = (latestSubmission.submitted || '—') + (latestSubmission.submitted ? ' UTC+3' : '');
+  }
+
+  // ---------------- Ticker ----------------
+  const tickerEl = document.getElementById('ticker');
+  function tickerHTML(items){
+    return items.map(r => `<div class="tick-item"><span class="tag">●</span> <b>${r.district}</b> — ${r.total} participants trained <span style="color:var(--slate)">· ${r.date}</span></div>`).join('');
+  }
+  function updateTicker(){
+    const recent = [...RAW].sort((a,b)=> b.date.localeCompare(a.date)).slice(0, 14);
+    tickerEl.innerHTML = tickerHTML(recent) + tickerHTML(recent); // duplicate for seamless loop
+  }
+
+  // ---------------- Filter state ----------------
+  const state = { region:"", district:"", officer:"", search:"" };
+
+  function uniqueSorted(arr){ return [...new Set(arr)].filter(Boolean).sort(); }
+
+  const regionSel = document.getElementById('f-region');
+  const districtSel = document.getElementById('f-district');
+  const officerSel = document.getElementById('f-officer');
+  const searchInput = document.getElementById('f-search');
+
+  function populateStaticFilters(){
+    regionSel.innerHTML = '<option value="">All regions</option>' +
+      uniqueSorted(RAW.map(r=>r.region)).map(r=>`<option value="${r}">${r}</option>`).join('');
+    officerSel.innerHTML = '<option value="">All officers</option>' +
+      uniqueSorted(RAW.map(r=>r.officer)).map(o=>`<option value="${o}">${o}</option>`).join('');
+    regionSel.value = state.region;
+    officerSel.value = state.officer;
+  }
+
+  function refreshDistrictOptions(){
+    const pool = state.region ? RAW.filter(r=>r.region===state.region) : RAW;
+    const opts = uniqueSorted(pool.map(r=>r.district));
+    districtSel.innerHTML = '<option value="">All districts</option>' + opts.map(d=>`<option value="${d}">${d}</option>`).join('');
+    if(!opts.includes(state.district)) { state.district = ""; }
+    districtSel.value = state.district;
+  }
+
+  regionSel.addEventListener('change', ()=>{ state.region = regionSel.value; refreshDistrictOptions(); render(); });
+  districtSel.addEventListener('change', ()=>{ state.district = districtSel.value; render(); });
+  officerSel.addEventListener('change', ()=>{ state.officer = officerSel.value; render(); });
+  searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); render(); });
+  document.getElementById('f-reset').addEventListener('click', ()=>{
+    state.region=""; state.district=""; state.officer=""; state.search="";
+    regionSel.value=""; officerSel.value=""; searchInput.value="";
+    refreshDistrictOptions();
+    render();
+  });
+
+  function getFiltered(){
+    return RAW.filter(r=>{
+      if(state.region && r.region !== state.region) return false;
+      if(state.district && r.district !== state.district) return false;
+      if(state.officer && r.officer !== state.officer) return false;
+      if(state.search){
+        const hay = (r.venue + ' ' + r.description + ' ' + r.subcounty).toLowerCase();
+        if(!hay.includes(state.search)) return false;
+      }
+      return true;
+    });
+  }
+
+  // ---------------- KPIs ----------------
+  function renderKPIs(data){
+    const activities = data.length;
+    const totalP = data.reduce((s,r)=>s+r.total,0);
+    const male = data.reduce((s,r)=>s+r.male,0);
+    const female = data.reduce((s,r)=>s+r.female,0);
+    const pwd = data.reduce((s,r)=>s+r.pwd_male+r.pwd_female,0);
+    const districts = new Set(data.map(r=>r.district)).size;
+    const regions = new Set(data.map(r=>r.region)).size;
+    const femalePct = totalP ? Math.round((female/totalP)*100) : 0;
+
+    const kpis = [
+      {val: activities, lbl:"Activities logged", c:"var(--ochre)", d:`across ${regions} region${regions!==1?'s':''}`},
+      {val: totalP.toLocaleString(), lbl:"Participants reached", c:"var(--acacia)", d:`avg ${activities?Math.round(totalP/activities):0}/session`},
+      {val: districts, lbl:"Districts covered", c:"var(--clay)", d:`of 22 in dataset`},
+      {val: femalePct+"%", lbl:"Female participation", c:"var(--slate)", d:`${female.toLocaleString()} women & girls`},
+      {val: pwd, lbl:"PWD participants", c:"var(--ochre)", d:`${totalP? ((pwd/totalP)*100).toFixed(1):0}% of reach`},
+      {val: new Set(data.map(r=>r.officer)).size, lbl:"Field officers active", c:"var(--acacia)", d:`logging submissions`},
+    ];
+    document.getElementById('kpis').innerHTML = kpis.map(k=>`
+      <div class="kpi" style="--kc:${k.c}">
+        <div class="val">${k.val}</div>
+        <div class="lbl">${k.lbl}</div>
+        <div class="delta">${k.d}</div>
+      </div>`).join('');
+  }
+
+  // ---------------- Charts ----------------
+  let chartRegion, chartGender, chartTrend, chartCategory;
+
+  function renderRegionChart(data){
+    const byRegion = {};
+    data.forEach(r=>{
+      byRegion[r.region] = byRegion[r.region] || {activities:0, total:0};
+      byRegion[r.region].activities++;
+      byRegion[r.region].total += r.total;
+    });
+    const labels = Object.keys(byRegion).sort((a,b)=>byRegion[b].total-byRegion[a].total);
+    const totals = labels.map(l=>byRegion[l].total);
+    const acts = labels.map(l=>byRegion[l].activities);
+    const colors = labels.map(l=>REGION_COLORS[l] || "#8CA0B8");
+
+    if(chartRegion) chartRegion.destroy();
+    chartRegion = new Chart(document.getElementById('chartRegion'), {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:'Participants', data: totals, backgroundColor: colors, borderRadius:6, yAxisID:'y', order:2, barPercentage:0.55},
+          {label:'Activities', data: acts, type:'line', borderColor:'#F5EFE2', backgroundColor:'#F5EFE2', yAxisID:'y1', tension:.35, pointRadius:4, pointBackgroundColor:'#F5EFE2', order:1}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index', intersect:false},
+        plugins:{legend:{labels:{boxWidth:10, font:{size:11}}}},
+        scales:{
+          x:{grid:{display:false}, ticks:{font:{size:11}}},
+          y:{position:'left', grid:{color:GRID}, ticks:{font:{size:10}}, title:{display:true, text:'Participants', font:{size:10}}},
+          y1:{position:'right', grid:{display:false}, ticks:{font:{size:10}}, title:{display:true, text:'Activities', font:{size:10}}}
+        }
+      }
+    });
+  }
+
+  function renderGenderChart(data){
+    const male = data.reduce((s,r)=>s+r.male,0);
+    const female = data.reduce((s,r)=>s+r.female,0);
+    const pwdM = data.reduce((s,r)=>s+r.pwd_male,0);
+    const pwdF = data.reduce((s,r)=>s+r.pwd_female,0);
+    const total = male+female;
+    document.getElementById('genderTotalLabel').textContent = total.toLocaleString();
+
+    if(chartGender) chartGender.destroy();
+    chartGender = new Chart(document.getElementById('chartGender'), {
+      type:'doughnut',
+      data:{
+        labels:['Male', 'Female', 'PWD (male)', 'PWD (female)'],
+        datasets:[{
+          data:[male-pwdM, female-pwdF, pwdM, pwdF],
+          backgroundColor:['#D08A3E','#5C9271','#C2604B','#8CA0B8'],
+          borderColor:'#1B2E4F', borderWidth:2
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}, padding:12}}}
+      }
+    });
+  }
+
+  function isoWeek(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    const target = new Date(d.valueOf());
+    const dayNr = (d.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNr + 3);
+    const firstThursday = new Date(target.getFullYear(),0,4);
+    const diff = target - firstThursday;
+    const week = 1 + Math.round(diff / (7*24*3600*1000));
+    return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+  }
+
+  function renderTrendChart(data){
+    const byWeek = {};
+    data.forEach(r=>{
+      const w = isoWeek(r.date);
+      byWeek[w] = byWeek[w] || {activities:0, total:0};
+      byWeek[w].activities++;
+      byWeek[w].total += r.total;
+    });
+    const labels = Object.keys(byWeek).sort();
+    const acts = labels.map(l=>byWeek[l].activities);
+    const totals = labels.map(l=>byWeek[l].total);
+
+    if(chartTrend) chartTrend.destroy();
+    chartTrend = new Chart(document.getElementById('chartTrend'), {
+      type:'line',
+      data:{
+        labels,
+        datasets:[
+          {label:'Participants', data: totals, borderColor:'#D08A3E', backgroundColor:'rgba(208,138,62,0.18)', fill:true, tension:.35, pointRadius:3, yAxisID:'y'},
+          {label:'Activities', data: acts, borderColor:'#8CA0B8', backgroundColor:'transparent', borderDash:[4,3], tension:.35, pointRadius:3, yAxisID:'y1'}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{labels:{boxWidth:10, font:{size:11}}}},
+        scales:{
+          x:{grid:{display:false}, ticks:{font:{size:10}}},
+          y:{position:'left', grid:{color:GRID}, ticks:{font:{size:10}}},
+          y1:{position:'right', grid:{display:false}, ticks:{font:{size:10}}}
+        }
+      }
+    });
+  }
+
+  function renderCategoryChart(data){
+    const byCat = {};
+    data.forEach(r=>{
+      const c = r.participant_category || "Unspecified";
+      byCat[c] = (byCat[c]||0) + r.total;
+    });
+    const labels = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+    const vals = labels.map(l=>byCat[l]);
+
+    if(chartCategory) chartCategory.destroy();
+    chartCategory = new Chart(document.getElementById('chartCategory'), {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{data: vals, backgroundColor:'#5C9271', borderRadius:6, barPercentage:0.5}]
+      },
+      options:{
+        indexAxis:'y',
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:GRID}, ticks:{font:{size:10}}},
+          y:{grid:{display:false}, ticks:{font:{size:11}}}
+        }
+      }
+    });
+  }
+
+  // ---------------- District table ----------------
+  let sortKey = 'total', sortAsc = false;
+
+  function renderDistrictTable(data){
+    const byDistrict = {};
+    data.forEach(r=>{
+      byDistrict[r.district] = byDistrict[r.district] || {region:r.region, activities:0, total:0, female:0, pwd:0};
+      const d = byDistrict[r.district];
+      d.activities++; d.total += r.total; d.female += r.female; d.pwd += (r.pwd_male+r.pwd_female);
+    });
+    const grandTotal = data.reduce((s,r)=>s+r.total,0) || 1;
+    let rows = Object.entries(byDistrict).map(([district, v])=>({
+      district, region:v.region, activities:v.activities, total:v.total,
+      femalePct: v.total? Math.round((v.female/v.total)*100):0, pwd:v.pwd,
+      share: v.total/grandTotal
+    }));
+
+    rows.sort((a,b)=>{
+      let av=a[sortKey], bv=b[sortKey];
+      if(typeof av === 'string') return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortAsc ? av-bv : bv-av;
+    });
+
+    document.getElementById('districtCountLabel').textContent = rows.length;
+
+    document.getElementById('districtTable').innerHTML = rows.map(r=>`
+      <tr>
+        <td>${r.district}</td>
+        <td><span class="region-chip"><span class="sw" style="background:${REGION_COLORS[r.region]||'#8CA0B8'}"></span>${r.region}</span></td>
+        <td class="num">${r.activities}</td>
+        <td class="num">${r.total.toLocaleString()}</td>
+        <td class="num">${r.femalePct}%</td>
+        <td class="num">${r.pwd}</td>
+        <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,r.share*100)}%"></div></div></td>
+      </tr>
+    `).join('');
+
+    document.querySelectorAll('th[data-key]').forEach(th=>{
+      th.classList.toggle('sorted', th.dataset.key===sortKey);
+      th.classList.toggle('asc', th.dataset.key===sortKey && sortAsc);
+    });
+  }
+
+  document.querySelectorAll('th[data-key]').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(sortKey===key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = false; }
+      renderDistrictTable(getFiltered());
+    });
+  });
+
+  // ---------------- Activity log ----------------
+  function renderLog(data){
+    const sorted = [...data].sort((a,b)=> b.date.localeCompare(a.date));
+    document.getElementById('logCountLabel').textContent = sorted.length;
+    document.getElementById('log').innerHTML = sorted.map((r,i)=>`
+      <div class="log-item" data-idx="${i}">
+        <div class="log-head">
+          <span class="swatch" style="background:${REGION_COLORS[r.region]||'#8CA0B8'}"></span>
+          <div class="meta">
+            <div class="title">${r.district} · ${r.venue || r.subcounty || r.region}</div>
+            <div class="sub">${r.date} · ${r.participant_category || 'Training'} · ${r.officer}</div>
+          </div>
+          <div class="nums">
+            <span>♂ <b>${r.male}</b></span>
+            <span>♀ <b>${r.female}</b></span>
+            <span>Σ <b>${r.total}</b></span>
+          </div>
+          <span class="chev">▾</span>
+        </div>
+        <div class="log-body">
+          <div class="log-body-grid">
+            <div>
+              <div class="k">Activity</div>
+              <div class="v">${r.description || '—'}</div>
+            </div>
+            <div>
+              <div class="k">Key feedback</div>
+              <div class="v">${r.feedback || '—'}</div>
+            </div>
+            <div>
+              <div class="k">Challenges</div>
+              <div class="v">${r.challenges || '—'}</div>
+            </div>
+            <div>
+              <div class="k">Recommendations</div>
+              <div class="v">${r.recommendations || '—'}</div>
+            </div>
+          </div>
+          <div class="officer-tag">Logged by ${r.officer} · submitted ${r.submitted || '—'}</div>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.log-head').forEach(h=>{
+      h.addEventListener('click', ()=> h.parentElement.classList.toggle('open'));
+    });
+  }
+
+  // ---------------- Master render ----------------
+  function render(){
+    const data = getFiltered();
+    document.getElementById('f-count').textContent = `${data.length} of ${RAW.length} activities`;
+    renderKPIs(data);
+    renderRegionChart(data);
+    renderGenderChart(data);
+    renderTrendChart(data);
+    renderCategoryChart(data);
+    renderDistrictTable(data);
+    renderLog(data);
+  }
+
+  function onDataChanged(){
+    updateLastSync();
+    updateTicker();
+    populateStaticFilters();
+    refreshDistrictOptions();
+    render();
+  }
+
+  onDataChanged();
+
+  // ================= Live sync layer =================
+  const srcUrlInput = document.getElementById('src-url');
+  const connectBtn = document.getElementById('src-connect');
+  const refreshBtn = document.getElementById('src-refresh');
+  const statusEl = document.getElementById('sync-status');
+  const tickerDot = document.getElementById('ticker-dot');
+
+  const STORAGE_KEY_NOTE = null; // artifacts can't use localStorage; URL only persists for this session
+
+  function setStatus(msg, cls){
+    statusEl.textContent = msg;
+    statusEl.className = 'sync-status' + (cls ? ' ' + cls : '');
+  }
+
+  function validateShape(json){
+    if(!Array.isArray(json)) return false;
+    if(json.length === 0) return true;
+    const sample = json[0];
+    return typeof sample === 'object' && 'district' in sample && 'total' in sample;
+  }
+
+  async function fetchLive(url, {silent=false} = {}){
+    if(!url){ setStatus('Enter a raw.githubusercontent.com JSON URL and click Connect.'); return; }
+    if(!silent) setStatus('Fetching latest data…');
+    try{
+      const bust = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+      const resp = await fetch(bust, {cache:'no-store'});
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if(!validateShape(json)) throw new Error('Unexpected data shape');
+      RAW = json;
+      onDataChanged();
+      const now = new Date();
+      setStatus(`Live · ${json.length} records · synced ${now.toLocaleTimeString('en-GB')}`, 'live');
+      tickerDot.style.background = 'var(--acacia)';
+    }catch(err){
+      setStatus(`Sync failed (${err.message}) — showing last known data`, 'err');
+    }
+  }
+
+  connectBtn.addEventListener('click', ()=>{
+    const url = srcUrlInput.value.trim();
+    if(pollTimer) clearInterval(pollTimer);
+    fetchLive(url);
+    if(url){
+      pollTimer = setInterval(()=> fetchLive(url, {silent:true}), 60000); // poll every 60s
+    }
+  });
+  refreshBtn.addEventListener('click', ()=>{
+    const url = srcUrlInput.value.trim();
+    if(url) fetchLive(url); else setStatus('Showing bundled snapshot (' + SNAPSHOT.length + ' records)');
+  });
+})();
+
+</script>
+</body>
+</html>
