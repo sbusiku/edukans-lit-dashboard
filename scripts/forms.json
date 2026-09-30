@@ -1,0 +1,141 @@
+{
+  "_instructions": "One entry per KoBo form feeding the dashboard. 'activity_type' must exactly match the strings the dashboard's TABS config expects: 'Training', 'Radio Talkshow', 'Community Dialogue', 'Back to School' -- do not change these. The training forms (training_legacy, local_govt, bog_pta) all use activity_type 'Training' so their records land in the same tab and their totals add together automatically; each also carries a 'training_type' tag ('Legacy', 'Local Govt', or 'BoG/PTA') that powers the dropdown filter inside that tab -- leave those strings as-is too, they must match the dashboard's subtypeOptions exactly. training_legacy is 'static': it is not fetched from any API -- it is loaded straight from baseline_training.json (the 49 historical records from the original training form, which is no longer synced) and is included in every single sync, full or --only, so those numbers are never dropped. For the two live forms, run 'python sync_kobo.py --inspect <key>' once, compare the printed field names against field_map, and correct any that don't match. Fields with no equivalent on a given form can be left as null/empty string in the map -- the sync script fills 0 for numeric fields and \"\" for text fields when a mapped key is missing or not found.",
+
+  "forms": [
+    {
+      "key": "training_legacy",
+      "static": true,
+      "static_file": "baseline_training.json",
+      "activity_type": "Training",
+      "training_type": "Legacy",
+      "_source_note": "Originally live-synced from KoBo form ahBUh4eZMqYjdWoBujKmZW, which is retired and no longer queried. These are its 49 historical submissions, frozen into baseline_training.json so the numbers are preserved."
+    },
+    {
+      "key": "local_govt",
+      "asset_uid": "aikoPjLqyGm75ENGf6BiMw",
+      "activity_type": "Training",
+      "training_type": "Local Govt",
+      "field_map": {
+        "date": "section_a/date_of_activity",
+        "region": "section_a/region",
+        "district": "section_a/district",
+        "subcounty": "section_a/sub_county",
+        "venue": "section_a/venue_location",
+        "description": "section_b/activity_description",
+        "participant_category": "section_b/participant_categories",
+        "male": "section_c/grand_total_male",
+        "female": "section_c/grand_total_female",
+        "pwd_male": "section_c/grand_total_pwd_male",
+        "pwd_female": "section_c/grand_total_pwd_female",
+        "total": "section_c/grand_total",
+        "feedback": "section_d/key_feedback",
+        "challenges": "section_d/challenges",
+        "recommendations": "section_d/recommendations",
+        "officer": "section_e/officer_name",
+        "geopoint": "_geolocation",
+        "submission_time": "_submission_time"
+      }
+    },
+    {
+      "key": "bog_pta",
+      "asset_uid": "auSVXUyjyrc4GDvWKHZ8uG",
+      "activity_type": "Training",
+      "training_type": "BoG/PTA",
+      "field_map": {
+        "date": "section_a/date_of_activity",
+        "region": "section_a/region",
+        "district": "section_a/district",
+        "subcounty": "",
+        "venue": "section_a/venue_location",
+        "description": "section_b/activity_description",
+        "participant_category": "section_b/participant_categories",
+        "male": "section_c/grand_total_male",
+        "female": "section_c/grand_total_female",
+        "pwd_male": "section_c/grand_total_pwd_male",
+        "pwd_female": "section_c/grand_total_pwd_female",
+        "total": "section_c/grand_total",
+        "feedback": "section_d/key_feedback",
+        "challenges": "section_d/challenges",
+        "recommendations": "section_d/recommendations",
+        "officer": "section_e/officer_name",
+        "geopoint": "_geolocation",
+        "submission_time": "_submission_time"
+      }
+    },
+    {
+      "key": "radio",
+      "asset_uid": "aMCKMhZ3xyVawPbUmqq7Gb",
+      "activity_type": "Radio Talkshow",
+      "field_map": {
+        "date": "grp_a/date_broadcast",
+        "region": "grp_a/region",
+        "district": "grp_b/districts_covered",
+        "subcounty": "",
+        "venue": "grp_a/station",
+        "description": "grp_a/program_title",
+        "participant_category": "target_audience",
+        "male": "grp_e/callins_male",
+        "female": "grp_e/callins_female",
+        "pwd_male": "pwd_male",
+        "pwd_female": "pwd_female",
+        "total": "grp_e/audience_estimate",
+        "feedback": "key_feedback",
+        "challenges": "challenges_encountered",
+        "recommendations": "recommendations",
+        "officer": "_submitted_by",
+        "geopoint": "_geolocation",
+        "submission_time": "_submission_time"
+      }
+    },
+    {
+      "key": "dialogue",
+      "asset_uid": "aPTBQobNQNbHNTGmQCjEbF",
+      "activity_type": "Community Dialogue",
+      "field_map": {
+        "date": "section_a/date_of_meeting",
+        "region": "section_a/region",
+        "district": "section_a/district",
+        "subcounty": "section_a/subcounty",
+        "venue": "section_a/venue_location",
+        "description": "section_d/cbc_key_messages",
+        "participant_category": "category_of_participants",
+        "male": "section_b/total_male",
+        "female": "section_b/total_female",
+        "pwd_male": "section_b/total_pwd_male",
+        "pwd_female": "section_b/total_pwd_female",
+        "total": "section_b/grand_total_attendance",
+        "feedback": "section_f/key_issues_concerns",
+        "challenges": "challenges_encountered",
+        "recommendations": "recommendations",
+        "officer": "section_g/monitor_name",
+        "geopoint": "section_g/gps_location",
+        "submission_time": "_submission_time"
+      }
+    },
+    {
+      "key": "backtoschool",
+      "asset_uid": "a9rJ5Lwk2rCosqGrHX25Q2",
+      "activity_type": "Back to School",
+      "field_map": {
+        "date": "sec_a/date_of_meeting",
+        "region": "sec_a/Region",
+        "district": "sec_a/District",
+        "subcounty": "sec_a/sub_county",
+        "venue": "sec_a/venue_location",
+        "description": "sec_a/meeting_purpose",
+        "participant_category": "learner_category",
+        "male": "boys_identified",
+        "female": "sec_e/total_tm_identified",
+        "pwd_male": "pwd_boys",
+        "pwd_female": "pwd_girls",
+        "total": "total_learners_identified",
+        "feedback": "support_provided",
+        "challenges": "sec_g/challenges",
+        "recommendations": "sec_g/followup_required",
+        "officer": "sec_h/reporting_officer_name",
+        "geopoint": "_geolocation",
+        "submission_time": "_submission_time"
+      }
+    }
+  ]
+}

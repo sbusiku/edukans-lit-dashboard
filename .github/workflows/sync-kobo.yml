@@ -22,11 +22,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run sync script
+      - name: Run sync script (all five forms)
         env:
           KOBO_API_TOKEN: ${{ secrets.KOBO_API_TOKEN }}
           KOBO_SERVER: https://kf.kobotoolbox.org
-          KOBO_ASSET_UID: ahBUh4eZMqYjdWoBujKmZW
         run: python scripts/sync_kobo.py
 
       - name: Commit updated data (if changed)
