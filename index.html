@@ -366,11 +366,7 @@
 
     <div class="syncbar">
       <div class="syncbar-row">
-        <div class="fgroup" style="flex:1; min-width:220px;">
-          <label>Live data source (raw.githubusercontent.com URL)</label>
-          <input type="text" id="src-url" placeholder="https://raw.githubusercontent.com/USER/REPO/main/data/activities.json" />
-        </div>
-        <button class="reset-btn" id="src-connect">Connect</button>
+        
         <button class="reset-btn" id="src-refresh" title="Fetch now">↻ Refresh now</button>
         <div class="sync-status" id="sync-status">Showing bundled snapshot</div>
       </div>
@@ -1352,10 +1348,15 @@
     const sample = json[0];
     return typeof sample === 'object' && 'district' in sample && 'total' in sample;
   }
+
+  // 1. Hardcode the local relative path directly to your repo's data folder
+  const LOCAL_DATA_PATH = 'data/activities.json';
+
   async function fetchLive(url, {silent=false} = {}){
-    if(!url){ setStatus('Enter a raw.githubusercontent.com JSON URL and click Connect.'); return; }
+    if(!url){ setStatus('Data path missing.'); return; }
     if(!silent) setStatus('Fetching latest data…');
     try{
+      // Appending a cache-busting timestamp keeps local data live immediately after an automated push
       const bust = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
       const resp = await fetch(bust, {cache:'no-store'});
       if(!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -1369,15 +1370,13 @@
       setStatus(`Sync failed (${err.message}) — showing last known data`, 'err');
     }
   }
-  connectBtn.addEventListener('click', ()=>{
-    const url = srcUrlInput.value.trim();
-    if(pollTimer) clearInterval(pollTimer);
-    fetchLive(url);
-    if(url){ pollTimer = setInterval(()=> fetchLive(url, {silent:true}), 60000); }
-  });
+
+  // 2. Automatically load the local data path immediately when the dashboard is loaded
+  if (pollTimer) clearInterval(pollTimer);
+  fetchLive(LOCAL_DATA_PATH);
+
   refreshBtn.addEventListener('click', ()=>{
-    const url = srcUrlInput.value.trim();
-    if(url) fetchLive(url); else setStatus('Showing bundled snapshot (' + SNAPSHOT.length + ' records)');
+    fetchLive(LOCAL_DATA_PATH);
   });
 })();
 
