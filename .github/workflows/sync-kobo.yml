@@ -4,7 +4,7 @@ on:
   schedule:
     # every 15 minutes. Adjust as needed -- GitHub's minimum practical
     # interval is ~5 min, but scheduled runs can lag under load.
-    - cron: "*/15 * * * *"
+    - cron: "7,22,38,52 * * * *"
   workflow_dispatch: {}   # lets you trigger a manual sync from the Actions tab
 
 permissions:
