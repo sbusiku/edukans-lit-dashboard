@@ -1,6 +1,5 @@
 {
   "_instructions": "One entry per KoBo form feeding the dashboard. 'activity_type' must exactly match the strings the dashboard's TABS config expects: 'Training', 'Radio Talkshow', 'Community Dialogue', 'Back to School' -- do not change these. The training forms (training_legacy, local_govt, bog_pta) all use activity_type 'Training' so their records land in the same tab and their totals add together automatically; each also carries a 'training_type' tag ('Legacy', 'Local Govt', or 'BoG/PTA') that powers the dropdown filter inside that tab -- leave those strings as-is too, they must match the dashboard's subtypeOptions exactly. training_legacy is 'static': it is not fetched from any API -- it is loaded straight from baseline_training.json (the 49 historical records from the original training form, which is no longer synced) and is included in every single sync, full or --only, so those numbers are never dropped. For the two live forms, run 'python sync_kobo.py --inspect <key>' once, compare the printed field names against field_map, and correct any that don't match. Fields with no equivalent on a given form can be left as null/empty string in the map -- the sync script fills 0 for numeric fields and \"\" for text fields when a mapped key is missing or not found.",
-
   "forms": [
     {
       "key": "training_legacy",
@@ -34,6 +33,12 @@
         "officer": "section_e/officer_name",
         "geopoint": "_geolocation",
         "submission_time": "_submission_time"
+      },
+      "category_fields": {
+        "DEO": "section_c/DEO_total",
+        "DIS": "section_c/DIS_total",
+        "DCDO": "section_c/DCDO_total",
+        "CDO": "section_c/CDO_total"
       }
     },
     {
@@ -59,7 +64,13 @@
         "recommendations": "section_d/recommendations",
         "officer": "section_e/officer_name",
         "geopoint": "_geolocation",
-        "submission_time": "_submission_time"
+        "submission_time": "_submission_time",
+        "school": "section_a/school"
+      },
+      "category_fields": {
+        "BoG": "section_c/BOG_total",
+        "PTA": "section_c/PTA_total",
+        "FBO": "section_c/FBO_total"
       }
     },
     {

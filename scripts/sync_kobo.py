@@ -212,7 +212,7 @@ def parse_geopoint(raw):
         return None, None
 
 
-def transform(record, fmap, activity_type, training_type=None, select_map=None, choice_labels=None):
+def transform(record, fmap, activity_type, training_type=None, select_map=None, choice_labels=None, cat_fields=None):
     select_map = select_map or {}
     choice_labels = choice_labels or {}
 
@@ -245,6 +245,15 @@ def transform(record, fmap, activity_type, training_type=None, select_map=None, 
         "lon": lon,
         "submitted": (field("submission_time") or "").replace("T", " ")[:16],
     }
+    # School the activity took place at / reached (optional -- only forms that ask for it).
+    school = field("school")
+    if school:
+        out["school"] = str(school).strip()
+    # Participants per category (e.g. {"DEO": 5, "DIS": 3}), summed by the dashboard.
+    # Configured per form under "category_fields": { label: question_path }.
+    cat_fields = cat_fields or {}
+    if cat_fields:
+        out["category_counts"] = {label: num(get_path(record, path)) for label, path in cat_fields.items()}
     if training_type:
         out["training_type"] = training_type
     return out
@@ -326,7 +335,7 @@ def cmd_sync(only=None):
             select_map, choice_labels = build_choice_resolver(schema)
             transformed = [
                 transform(r, form["field_map"], form["activity_type"], form.get("training_type"),
-                          select_map, choice_labels)
+                          select_map, choice_labels, form.get("category_fields"))
                 for r in records
             ]
         all_records.extend(transformed)
