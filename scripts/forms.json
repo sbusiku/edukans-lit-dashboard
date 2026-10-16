@@ -84,18 +84,24 @@
         "subcounty": "",
         "venue": "grp_a/station",
         "description": "grp_a/program_title",
-        "participant_category": "target_audience",
+        "participant_category": "",
         "male": "grp_e/callins_male",
         "female": "grp_e/callins_female",
-        "pwd_male": "pwd_male",
-        "pwd_female": "pwd_female",
+        "pwd_male": "",
+        "pwd_female": "",
         "total": "grp_e/audience_estimate",
         "feedback": "key_feedback",
         "challenges": "challenges_encountered",
         "recommendations": "recommendations",
         "officer": "_submitted_by",
-        "geopoint": "_geolocation",
+        "geopoint": "grp_g/gps_station",
         "submission_time": "_submission_time"
+      },
+      "category_fields": {
+        "Calls": "grp_e/callins_total",
+        "SMS": "grp_e/sms_count",
+        "WhatsApp / social": "grp_e/whatsapp_count",
+        "Panellists": "grp_c/panel_total"
       }
     },
     {
@@ -109,7 +115,7 @@
         "subcounty": "section_a/subcounty",
         "venue": "section_a/venue_location",
         "description": "section_d/cbc_key_messages",
-        "participant_category": "category_of_participants",
+        "participant_category": "",
         "male": "section_b/total_male",
         "female": "section_b/total_female",
         "pwd_male": "section_b/total_pwd_male",
@@ -117,10 +123,20 @@
         "total": "section_b/grand_total_attendance",
         "feedback": "section_f/key_issues_concerns",
         "challenges": "challenges_encountered",
-        "recommendations": "recommendations",
+        "recommendations": "section_f/action_points_agreed",
         "officer": "section_g/monitor_name",
         "geopoint": "section_g/gps_location",
-        "submission_time": "_submission_time"
+        "submission_time": "_submission_time",
+        "school": "section_a/school_name"
+      },
+      "category_fields": {
+        "LG Reps": "section_b/grp_lg_reps/lg_reps_total",
+        "BoG": "section_b/grp_bog/bog_total",
+        "PTA": "section_b/grp_pta/pta_total",
+        "FBO": "section_b/grp_fbo_reps/fbo_reps_total",
+        "Parents": "section_b/grp_parents_community/parents_community_total",
+        "Adolescents": "section_b/grp_adolescents/adolescents_total",
+        "Refugees": "section_b/grp_refugees/refugees_total"
       }
     },
     {
@@ -134,18 +150,23 @@
         "subcounty": "sec_a/sub_county",
         "venue": "sec_a/venue_location",
         "description": "sec_a/meeting_purpose",
-        "participant_category": "learner_category",
-        "male": "boys_identified",
+        "participant_category": "",
+        "male": "",
         "female": "sec_e/total_tm_identified",
-        "pwd_male": "pwd_boys",
-        "pwd_female": "pwd_girls",
-        "total": "total_learners_identified",
-        "feedback": "support_provided",
+        "pwd_male": "",
+        "pwd_female": "",
+        "total": "sec_e/total_tm_identified",
+        "feedback": "sec_g/lessons_learned",
         "challenges": "sec_g/challenges",
-        "recommendations": "sec_g/followup_required",
+        "recommendations": "sec_g/action_points",
         "officer": "sec_h/reporting_officer_name",
-        "geopoint": "_geolocation",
+        "geopoint": "",
         "submission_time": "_submission_time"
+      },
+      "category_fields": {
+        "PSWs attended": "sec_b/psw_total_attended",
+        "Teenage mothers identified": "sec_e/total_tm_identified",
+        "Re-enrolment confirmed": "sec_e/total_reenrolment_confirmed"
       }
     }
   ]

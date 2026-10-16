@@ -198,6 +198,11 @@ def get_path(record, dotted_key):
     alt = dotted_key.replace("/", "_")
     if alt in record:
         return record[alt]
+    # Nested groups: fall back to a single key that ends with the question name
+    leaf = dotted_key.split("/")[-1]
+    hits = [k for k in record if k == leaf or k.endswith("/" + leaf)]
+    if len(hits) == 1:
+        return record[hits[0]]
     return None
 
 

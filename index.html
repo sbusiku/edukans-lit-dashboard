@@ -584,7 +584,7 @@
       }
     },
     radio: {
-      title: "Radio Talkshow", activityType: "Radio Talkshow",
+      title: "Radio Talkshow", activityType: "Radio Talkshow", categorySub: "Panellists, calls and messages received, summed",
       sub: "District radio talkshows carrying messages on girls' education, dropout prevention and the right to education to a wider community audience.",
       icon: "radio", color: "var(--slate)",
       empty: {
@@ -614,7 +614,7 @@
       }
     },
     backtoschool: {
-      title: "Back to School", activityType: "Back to School",
+      title: "Back to School", activityType: "Back to School", categorySub: "PSWs attended, teenage mothers identified and re-enrolments, summed",
       sub: "Tracking of out-of-school children identified for re-enrolment, and the barriers and support that shape whether they return.",
       icon: "backtoschool", color: "var(--clay)",
       empty: {
@@ -816,7 +816,10 @@
   const CATEGORY_NAMES = {
     DEO:'District Education Officer', DIS:'District Inspector of Schools',
     DCDO:'District Community Development Officer', CDO:'Community Development Officer',
-    BoG:'Board of Governors', PTA:'Parent Teacher Association', FBO:'Faith-Based Organisation'
+    BoG:'Board of Governors', PTA:'Parent Teacher Association', FBO:'Faith-Based Organisation',
+    'LG Reps':'Local Government Representatives', Parents:'Parents / Community Members',
+    'PSWs attended':'Para-social workers who attended',
+    'WhatsApp / social':'WhatsApp and social media messages received'
   };
 
   // Participants summed per category. Records synced with category_counts contribute each
@@ -1188,7 +1191,7 @@
         </div>
         <div class="panel">
           <h3>Participant categories</h3>
-          <div class="panel-sub">Participants summed by category</div>
+          <div class="panel-sub">${cfg.categorySub || 'Participants summed by category'}</div>
           <div class="chart-holder"><canvas id="chartCategory-${tabKey}"></canvas></div>
           <div class="cat-chips" id="catSummary-${tabKey}"></div>
         </div>
