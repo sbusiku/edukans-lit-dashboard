@@ -304,6 +304,39 @@
     .sidebar-foot{display:none;}
     .main{padding:20px 16px 40px;}
   }
+
+  /* ---------- Indicators ---------- */
+  .ind-sum{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;}
+  @media(max-width:900px){.ind-sum{grid-template-columns:repeat(2,1fr);}}
+  .ind-sec{margin-bottom:16px;}
+  .ind-sec-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .ind-sec-head h3{margin:0;}
+  .ind-sec-head .cnt{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-dim);}
+  .ind-cols, .ind-row{display:grid; grid-template-columns:40px minmax(0,1fr) 120px 120px minmax(170px,230px); gap:14px; align-items:center;}
+  .ind-cols{padding:6px 4px; border-bottom:1px solid var(--line); font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint);}
+  .ind-row{padding:13px 4px; border-bottom:1px solid var(--line);}
+  .ind-row:last-child{border-bottom:none;}
+  .ind-num{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-dim); background:var(--slate-soft); border-radius:8px; padding:4px 0; text-align:center;}
+  .ind-name{font-size:13.5px; color:var(--ink); line-height:1.35;}
+  .ind-meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; align-items:center;}
+  .ind-chip{font-size:10.5px; padding:2px 9px; border-radius:20px; background:var(--forest-soft); color:var(--forest); cursor:pointer; border:none; font-family:inherit;}
+  .ind-chip.none{background:var(--slate-soft); color:var(--slate); cursor:default;}
+  .ind-chip.warn{background:var(--ochre-soft); color:#8a5a12; cursor:default;}
+  .ind-note{font-size:11px; color:var(--ink-faint); margin-top:5px; line-height:1.4;}
+  .ind-val{font-family:'Fraunces', serif; font-size:20px; font-weight:600; color:var(--ink);}
+  .ind-val.dim{color:var(--ink-faint); font-weight:500;}
+  .ind-tgt{font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-dim);}
+  .ind-prog .bar{height:8px; background:var(--line); border-radius:6px; overflow:hidden;}
+  .ind-prog .fill{height:100%; background:var(--ochre); border-radius:6px;}
+  .ind-prog .fill.done{background:var(--forest);}
+  .ind-prog .pct{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink); margin-top:5px;}
+  .ind-prog .pct.dim{color:var(--ink-faint);}
+  .ind-foot{font-size:11.5px; color:var(--ink-faint); line-height:1.5; margin-top:4px;}
+  @media(max-width:860px){
+    .ind-cols{display:none;}
+    .ind-row{grid-template-columns:40px 1fr; row-gap:8px;}
+    .ind-row > :nth-child(n+3){grid-column:2;}
+  }
 </style>
 </head>
 <body>
@@ -322,6 +355,11 @@
       <div class="navitem active" data-tab="overview">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         <span class="lbl">Overview</span>
+      </div>
+      <div class="navitem" data-tab="indicators">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>
+        <span class="lbl">Indicators</span>
+        <span class="count" id="nav-count-indicators">—</span>
       </div>
 
       <div class="nav-section-lbl">Activity streams</div>
@@ -469,6 +507,11 @@
           <div class="chart-holder tall"><canvas id="chartDialogueBar"></canvas></div>
         </div>
       </section>
+    </section>
+
+    <!-- ============ INDICATORS TAB ============ -->
+    <section class="tabpanel" id="tab-indicators">
+      <div id="content-indicators"></div>
     </section>
 
     <!-- ============ TRAINING TAB ============ -->
@@ -1485,13 +1528,177 @@
     });
   }
 
+  // ================= Indicators =================
+  const INDICATORS_PAGE = {
+    title: "Indicators",
+    sub: "Programme indicators against life-of-programme (LOP) targets, with achievements drawn live from the training, radio, dialogue and back-to-school tools."
+  };
+
+  const IND_SECTIONS = [
+    {name:'B. Digital skills & LMS', ids:[5,6,7,10]},
+    {name:'C. Institutional reach', ids:[12,13,14,15]},
+    {name:'D. Community engagement', ids:[16,17,18,19,20,21,22,23,24]}
+  ];
+
+  // LOP targets as given in Indicators_Framework.xlsx (formula targets evaluated: #16, #19, #24).
+  const INDICATORS = [
+    {id:5,  text:'Number of pre-service teachers & tutors trained on digital life skills modules', target:7500},
+    {id:6,  text:'Number of lecturers oriented on Learning Management System (LMS)', target:300},
+    {id:7,  text:'Number of digital training modules developed and uploaded to LMS', target:3},
+    {id:10, text:'# of teachers that have completed a module in LMS', target:50, isPercent:true},
+    {id:12, text:'Number of universities', target:10},
+    {id:13, text:'Number of TTIs', target:5},
+    {id:14, text:'Number of districts', target:145, sources:['training','radio','dialogue','backtoschool'],
+      note:'Distinct districts across all four tools (Radio uses its coverage-area list).'},
+    {id:15, text:'Number of schools', target:2091, sources:['training','dialogue','backtoschool'],
+      note:'Distinct schools named in submissions, or venues that read as schools. A school visited several times counts once.'},
+    {id:16, text:'Number of local government / BOG / PTA members trained on community engagement', target:46872, sources:['training'],
+      note:'All Training participants: legacy baseline + Local Govt + BoG/PTA.'},
+    {id:17, text:'Number of teenage girls supported for school re-entry', target:1740, sources:['backtoschool'],
+      note:'Re-enrolment confirmed, as recorded in the Back to School tool.'},
+    {id:18, text:'Number of para-social workers engaged for girl-tracking', target:21190, sources:['backtoschool'],
+      note:'PSW attendance summed across meetings: the same PSW at several meetings is counted each time.'},
+    {id:19, text:'Number of community dialogue meetings conducted', target:16728, sources:['dialogue']},
+    {id:20, text:'Number of community mobilization drives conducted', target:145},
+    {id:21, text:'Number of radio talk shows broadcast', target:60, sources:['radio']},
+    {id:22, text:'Number of people reached through the radio talk shows', target:3000000, sources:['radio'],
+      note:'Estimated audience reported per broadcast.'},
+    {id:23, text:'Number of people reached through the community dialogue meeting', target:125460, sources:['dialogue']},
+    {id:24, text:'Number of IEC materials distributed', target:72500}
+  ];
+
+  function sumField(rows, f){ return rows.reduce((s,r)=> s + (Number(r[f])||0), 0); }
+  // Sum one category from category_counts. pending = records exist but none carry that category yet
+  // (they were synced before per-category counts existed), so the figure can't be read until the next sync.
+  function sumCategory(rows, label){
+    if(!rows.length) return {value:0};
+    const withCat = rows.filter(r=> r.category_counts && Object.prototype.hasOwnProperty.call(r.category_counts, label));
+    if(!withCat.length) return {value:null, pending:true};
+    return {value: withCat.reduce((s,r)=> s + (Number(r.category_counts[label])||0), 0)};
+  }
+  function distinctDistricts(data){
+    const set = new Set();
+    data.forEach(r=>{
+      String(r.district||'').split(/[\n,;]+/).forEach(t=>{
+        const k = t.toLowerCase().replace(/\bdistrict\b/g,' ').replace(/[_\-\s]+/g,' ').trim();
+        if(k && k !== 'unknown') set.add(k);
+      });
+    });
+    return set.size;
+  }
+  function distinctSchools(data){
+    const set = new Set();
+    data.forEach(r=>{ const k = schoolKey(r); if(k) set.add(k); });
+    return set.size;
+  }
+
+  // id -> {value, pending}. Indicators with no entry have no field tool feeding them.
+  function computeIndicators(data){
+    const by = t => data.filter(r=> r.activity_type === t);
+    const training = by('Training'), radio = by('Radio Talkshow'), dialogue = by('Community Dialogue'), bts = by('Back to School');
+    return {
+      14: {value: distinctDistricts(data)},
+      15: {value: distinctSchools(data)},
+      16: {value: sumField(training,'total')},
+      17: sumCategory(bts, 'Re-enrolment confirmed'),
+      18: sumCategory(bts, 'PSWs attended'),
+      19: {value: dialogue.length},
+      21: {value: radio.length},
+      22: {value: sumField(radio,'total')},
+      23: {value: sumField(dialogue,'total')}
+    };
+  }
+
+  function fmtPct(p){
+    if(p > 0 && p < 0.001) return '<0.1%';
+    const v = p*100;
+    return (v < 10 ? v.toFixed(1) : Math.round(v).toString()) + '%';
+  }
+
+  function indicatorsHTML(data){
+    const res = computeIndicators(data);
+    const byId = {}; INDICATORS.forEach(i=> byId[i.id] = i);
+    let tracked = 0, pendingN = 0, met = 0;
+    INDICATORS.forEach(i=>{
+      const r = res[i.id];
+      if(!r) return;
+      if(r.pending){ pendingN++; return; }
+      tracked++;
+      if(r.value >= i.target) met++;
+    });
+    const awaiting = INDICATORS.length - tracked - pendingN;
+
+    const kpi = (val,lbl,sub,c)=> `<div class="kpi" style="--kc:${c}"><div class="val">${val}</div><div class="lbl">${lbl}</div><div class="delta">${sub}</div></div>`;
+    const summary = `<div class="ind-sum">
+      ${kpi(INDICATORS.length,'Indicators in framework','across 3 sections','var(--slate)')}
+      ${kpi(tracked,'Reading live field data','from the four tools','var(--forest)')}
+      ${kpi(awaiting + pendingN,'Not yet reading data', pendingN ? (awaiting+' have no data source · '+pendingN+' need a re-sync') : 'no field tool feeds these yet','var(--ochre)')}
+      ${kpi(met,'Targets met','at or above LOP target','var(--clay)')}
+    </div>`;
+
+    const sections = IND_SECTIONS.map(sec=>{
+      const items = sec.ids.map(id=> byId[id]);
+      const live = items.filter(i=> res[i.id] && !res[i.id].pending).length;
+      const rows = items.map(i=>{
+        const r = res[i.id];
+        const tgtLabel = i.isPercent ? i.target + '%' : i.target.toLocaleString();
+        let chips = '', valHTML, progHTML;
+        if(!r){
+          chips = '<span class="ind-chip none">No data source yet</span>';
+          valHTML = '<div class="ind-val dim">—</div>';
+          progHTML = '<div class="bar"></div><div class="pct dim">Awaiting data</div>';
+        } else {
+          chips = i.sources.map(s=> `<button class="ind-chip" data-jump="${s}" title="Open ${TABS[s].title}">${TABS[s].title}</button>`).join('');
+          if(r.pending){
+            chips += '<span class="ind-chip warn">Re-sync needed</span>';
+            valHTML = '<div class="ind-val dim">—</div>';
+            progHTML = '<div class="bar"></div><div class="pct dim">Awaiting re-sync</div>';
+          } else {
+            const p = i.target ? r.value / i.target : 0;
+            valHTML = `<div class="ind-val">${r.value.toLocaleString()}</div>`;
+            progHTML = `<div class="bar"><div class="fill${p>=1?' done':''}" style="width:${Math.min(100,p*100)}%"></div></div><div class="pct">${fmtPct(p)} of target</div>`;
+          }
+        }
+        return `<div class="ind-row">
+          <div class="ind-num">${i.id}</div>
+          <div><div class="ind-name">${i.text}</div>
+            <div class="ind-meta">${chips}</div>
+            ${i.note ? `<div class="ind-note">${i.note}</div>` : ''}</div>
+          <div>${valHTML}</div>
+          <div class="ind-tgt">${tgtLabel}</div>
+          <div class="ind-prog">${progHTML}</div>
+        </div>`;
+      }).join('');
+      return `<div class="panel ind-sec">
+        <div class="ind-sec-head"><h3>${sec.name}</h3><span class="cnt">${live} of ${items.length} reading live data</span></div>
+        <div class="ind-cols"><div>#</div><div>Indicator</div><div>Achieved</div><div>LOP target</div><div>Progress</div></div>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    const foot = `<div class="ind-foot">Progress is measured against life-of-programme (LOP) targets. The Year 1–5 target columns in the framework file are blank, so yearly tracking isn't shown yet.</div>`;
+    return {html: summary + sections + foot, tracked, total: INDICATORS.length};
+  }
+
+  function renderIndicators(){
+    const out = indicatorsHTML(RAW);
+    const el = document.getElementById('content-indicators');
+    if(el){
+      el.innerHTML = out.html;
+      el.querySelectorAll('.ind-chip[data-jump]').forEach(c=> c.addEventListener('click', ()=> switchTab(c.dataset.jump)));
+    }
+    const cnt = document.getElementById('nav-count-indicators');
+    if(cnt) cnt.textContent = out.tracked + '/' + out.total;
+  }
+
   // ================= Tab switching =================
   function switchTab(tabKey){
     document.querySelectorAll('.navitem').forEach(n=> n.classList.toggle('active', n.dataset.tab===tabKey));
     document.querySelectorAll('.tabpanel').forEach(p=> p.classList.toggle('active', p.id === 'tab-'+tabKey));
-    document.getElementById('pagetitle').textContent = TABS[tabKey].title;
-    document.getElementById('pagesub').textContent = TABS[tabKey].sub;
-    if(tabKey !== 'overview' && !document.getElementById('content-'+tabKey).dataset.built){
+    const meta = tabKey === 'indicators' ? INDICATORS_PAGE : TABS[tabKey];
+    document.getElementById('pagetitle').textContent = meta.title;
+    document.getElementById('pagesub').textContent = meta.sub;
+    if(tabKey !== 'overview' && tabKey !== 'indicators' && !document.getElementById('content-'+tabKey).dataset.built){
       initActivityTab(tabKey);
       document.getElementById('content-'+tabKey).dataset.built = "1";
     }
@@ -1505,12 +1712,13 @@
     updateLastSync();
     updateTicker();
     renderOverview();
+    renderIndicators();
     ['training','radio','dialogue','backtoschool'].forEach(k=>{
       document.getElementById('content-'+k).dataset.built = "";
     });
     const activeTab = document.querySelector('.navitem.active');
     const activeKey = activeTab ? activeTab.dataset.tab : 'overview';
-    if(activeKey !== 'overview'){ initActivityTab(activeKey); document.getElementById('content-'+activeKey).dataset.built = "1"; }
+    if(activeKey !== 'overview' && activeKey !== 'indicators'){ initActivityTab(activeKey); document.getElementById('content-'+activeKey).dataset.built = "1"; }
   }
 
   onDataChanged();
