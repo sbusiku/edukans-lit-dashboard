@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#F4F5F1;
@@ -337,6 +338,37 @@
     .ind-row{grid-template-columns:40px 1fr; row-gap:8px;}
     .ind-row > :nth-child(n+3){grid-column:2;}
   }
+
+  /* ---------- Reports ---------- */
+  .rp-layout{display:grid; grid-template-columns:340px minmax(0,1fr); gap:16px; align-items:start;}
+  @media(max-width:1100px){.rp-layout{grid-template-columns:1fr;}}
+  .rp-config{position:sticky; top:12px; max-height:calc(100vh - 24px); overflow:auto;}
+  @media(max-width:1100px){.rp-config{position:static; max-height:none;}}
+  .rp-grp{margin-top:16px; display:flex; flex-direction:column;}
+  .rp-grp > label{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); margin-bottom:6px;}
+  .rp-grp input[type=text], .rp-grp select, .rp-grp textarea, .rp-grp input[type=date]{
+    background:var(--surface-2); color:var(--ink); border:1px solid var(--line-strong); border-radius:8px;
+    padding:8px 10px; font-family:'IBM Plex Sans', sans-serif; font-size:13px; outline:none; width:100%; min-width:0;}
+  .rp-grp textarea{resize:vertical;}
+  .rp-grp input:focus, .rp-grp select:focus, .rp-grp textarea:focus{border-color:var(--ochre);}
+  .rp-presets{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+  .rp-pre{background:transparent; border:1px solid var(--line-strong); color:var(--ink-dim); border-radius:8px; padding:8px 6px; font-size:12px; cursor:pointer; font-family:inherit; transition:.15s;}
+  .rp-pre:hover{border-color:var(--ochre); color:var(--ochre);}
+  .rp-pre.on{background:var(--ochre-soft); border-color:var(--ochre); color:#8a5a12; font-weight:600;}
+  .rp-dates{display:flex; align-items:center; gap:6px; margin-top:6px; font-size:12px; color:var(--ink-faint);}
+  .rp-chk{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink); padding:3px 0; cursor:pointer;}
+  .rp-chk input{accent-color:var(--forest); width:15px; height:15px; margin:0;}
+  .rp-sub{margin:2px 0 0 24px; padding-left:10px; border-left:2px solid var(--line);}
+  .rp-sub .rp-chk{font-size:12.5px; color:var(--ink-dim);}
+  .rp-btns{display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:6px;}
+  .rp-btn{background:transparent; border:1px solid var(--line-strong); color:var(--ink); border-radius:8px; padding:10px 8px; font-size:12.5px; font-weight:500; cursor:pointer; font-family:inherit; transition:.15s;}
+  .rp-btn:hover{border-color:var(--ochre); color:var(--ochre);}
+  .rp-btn.primary{background:var(--forest); border-color:var(--forest); color:#fff;}
+  .rp-btn.primary:hover{background:#2f6247; color:#fff;}
+  .rp-status{font-size:11.5px; color:var(--ink-dim); margin-top:8px; min-height:16px; line-height:1.4;}
+  .rp-count{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint); margin:0 0 8px 2px;}
+  .rp-paper{background:#fff; border:1px solid var(--line); border-radius:12px; padding:34px 38px; box-shadow:var(--shadow);}
+  @media(max-width:700px){.rp-paper{padding:20px 16px;} .rpt .kgrid{grid-template-columns:repeat(2,1fr)!important;} .rpt .rpt-meta{grid-template-columns:1fr!important;} .rp-paper{overflow-x:auto;}}
 </style>
 </head>
 <body>
@@ -360,6 +392,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>
         <span class="lbl">Indicators</span>
         <span class="count" id="nav-count-indicators">—</span>
+      </div>
+      <div class="navitem" data-tab="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+        <span class="lbl">Reports</span>
       </div>
 
       <div class="nav-section-lbl">Activity streams</div>
@@ -512,6 +548,11 @@
     <!-- ============ INDICATORS TAB ============ -->
     <section class="tabpanel" id="tab-indicators">
       <div id="content-indicators"></div>
+    </section>
+
+    <!-- ============ REPORTS TAB ============ -->
+    <section class="tabpanel" id="tab-reports">
+      <div id="content-reports"></div>
     </section>
 
     <!-- ============ TRAINING TAB ============ -->
@@ -1691,14 +1732,540 @@
     if(cnt) cnt.textContent = out.tracked + '/' + out.total;
   }
 
+  // ================= Reports =================
+  const REPORTS_PAGE = {
+    title: "Reports",
+    sub: "Build a report from any mix of tools, period and geography, then download it as a PDF, Excel workbook or CSV."
+  };
+
+  const TOOL_LIST = ['training','radio','dialogue','backtoschool'];
+  const TRAINING_SUBS = ['Legacy','Local Govt','BoG/PTA'];
+  const REPORT_SECTIONS = [
+    {id:'summary',     label:'Executive summary & tool breakdown'},
+    {id:'indicators',  label:'Indicators vs targets'},
+    {id:'region',      label:'Reach by region (with schools)'},
+    {id:'district',    label:'Reach by district'},
+    {id:'gender',      label:'Gender & inclusion'},
+    {id:'categories',  label:'Participant categories'},
+    {id:'qualitative', label:'Challenges & recommendations'},
+    {id:'log',         label:'Activity log (appendix)'}
+  ];
+  const REPORT_PRESETS = {
+    summary:    {label:'Programme summary',  title:'Programme summary report', sections:['summary','region','gender','categories']},
+    indicators: {label:'Indicator progress', title:'Indicator progress report', sections:['summary','indicators']},
+    full:       {label:'Full report',        title:'Full programme report', sections:REPORT_SECTIONS.map(s=>s.id)},
+    log:        {label:'Field activity log', title:'Field activity report', sections:['summary','qualitative','log']}
+  };
+  const LOG_LIMIT = 300, DISTRICT_LIMIT = 25, QUAL_LIMIT = 30;
+
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const fmtN = n => (Number(n) || 0).toLocaleString();
+
+  const REPORT_CSS = `
+.rpt{font-family:'IBM Plex Sans',sans-serif; color:#132524; font-size:12.5px; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+.rpt h1{font-family:'Fraunces',serif; font-size:28px; margin:4px 0 8px; font-weight:600; line-height:1.15;}
+.rpt h2{font-family:'Fraunces',serif; font-size:17px; margin:26px 0 8px; padding-bottom:5px; border-bottom:2px solid #D98F2B; font-weight:600; break-after:avoid;}
+.rpt .rpt-eyebrow{font:600 10.5px 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:#B8751B;}
+.rpt .rpt-meta{display:grid; grid-template-columns:repeat(2,1fr); gap:4px 24px; font-size:12px; color:#5B6B67; margin-top:8px;}
+.rpt .rpt-meta b{color:#132524; font-weight:600;}
+.rpt .kgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px;}
+.rpt .k{border:1px solid #E4E2D8; border-radius:10px; padding:10px 12px; background:#FBFAF6; break-inside:avoid;}
+.rpt .k .v{font-family:'Fraunces',serif; font-size:22px; font-weight:600; line-height:1.1;}
+.rpt .k .l{font-size:11px; color:#5B6B67; margin-top:2px;}
+.rpt p{margin:10px 0 0;}
+.rpt table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;}
+.rpt th{text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#8A9793; padding:6px 8px; border-bottom:1px solid #D5D2C4;}
+.rpt td{padding:6px 8px; border-bottom:1px solid #EEEBE0; vertical-align:top;}
+.rpt td.num,.rpt th.num{text-align:right; font-family:'IBM Plex Mono',monospace; white-space:nowrap;}
+.rpt tr{break-inside:avoid;}
+.rpt tr.sub td:first-child{padding-left:24px; color:#5B6B67;}
+.rpt tr.tot td{font-weight:600; border-top:1px solid #D5D2C4; background:#FBFAF6;}
+.rpt tr.grp td{background:#F4F5F1; font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:#5B6B67;}
+.rpt .bar{height:7px; background:#EEEBE0; border-radius:4px; overflow:hidden; min-width:70px;}
+.rpt .bar i{display:block; height:100%; background:#D98F2B;}
+.rpt .bar i.g{background:#3E7A5A;}
+.rpt .note{font-size:11px; color:#8A9793; margin-top:6px;}
+.rpt .notes{border-left:3px solid #D98F2B; background:#FBFAF6; padding:10px 14px; margin:14px 0 0; white-space:pre-wrap;}
+.rpt .q{border:1px solid #E4E2D8; border-radius:8px; padding:8px 12px; margin-top:8px; break-inside:avoid;}
+.rpt .q .qh{font-size:11px; color:#5B6B67; margin-bottom:3px;}
+.rpt .q .qh b{color:#132524;}
+.rpt .q .ql{font:600 9.5px 'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.07em; color:#B8751B; margin-top:4px;}
+.rpt .rpt-empty{padding:30px; text-align:center; color:#5B6B67; border:1px dashed #D5D2C4; border-radius:10px; margin-top:16px;}
+.rpt .rpt-foot{margin-top:28px; padding-top:10px; border-top:1px solid #E4E2D8; font-size:10.5px; color:#8A9793;}
+.rpt .dim{color:#8A9793;}
+`;
+
+  // ---------- filtering ----------
+  function districtTokens(r){ return String(r.district||'').split(/[\n,;]+/).map(t=>t.trim()).filter(Boolean); }
+  function districtLabel(r){ const t = districtTokens(r); return t.length ? t.map(titleCase).join(' / ') : 'Unknown'; }
+  function toolKeyOf(r){ return TOOL_LIST.find(k=> TABS[k].activityType === r.activity_type); }
+  function toolLabelOf(r){ return r.activity_type + (r.training_type ? ' · ' + r.training_type : ''); }
+
+  function reportRows(p, source){
+    return (source || RAW).filter(r=>{
+      const tool = toolKeyOf(r);
+      if(!tool || !p.tools.includes(tool)) return false;
+      if(tool === 'training' && r.training_type && !p.subs.includes(r.training_type)) return false;
+      if(p.from && (!r.date || r.date < p.from)) return false;
+      if(p.to && (!r.date || r.date > p.to)) return false;
+      if(p.region && r.region !== p.region) return false;
+      if(p.district && !districtTokens(r).some(t=> titleCase(t) === p.district)) return false;
+      return true;
+    });
+  }
+
+  // ---------- data builders (shared by the on-screen report, PDF and Excel) ----------
+  function statsOf(rows){
+    return {n:rows.length, total:sumField(rows,'total'), male:sumField(rows,'male'), female:sumField(rows,'female'),
+      pwdM:sumField(rows,'pwd_male'), pwdF:sumField(rows,'pwd_female'),
+      districts:distinctDistricts(rows), schools:distinctSchools(rows)};
+  }
+  const femShare = s => (s.male + s.female) ? Math.round(s.female/(s.male+s.female)*100) + '%' : '—';
+
+  function toolBreakdown(p, rows){
+    const out = [];
+    TOOL_LIST.filter(k=> p.tools.includes(k)).forEach(k=>{
+      const sub = rows.filter(r=> r.activity_type === TABS[k].activityType);
+      out.push({label:TABS[k].title, sub:false, s:statsOf(sub)});
+      if(k === 'training'){
+        const present = TRAINING_SUBS.filter(t=> sub.some(r=> r.training_type === t));
+        if(present.length > 1) present.forEach(t=> out.push({label:t, sub:true, s:statsOf(sub.filter(r=> r.training_type === t))}));
+      }
+    });
+    return out;
+  }
+
+  function regionData(rows){
+    const by = {};
+    rows.forEach(r=>{ const k = r.region || 'Unknown'; (by[k] = by[k] || []).push(r); });
+    const regs = orderRegions(new Set(Object.keys(by)));
+    return regs.map(k=>{ const s = statsOf(by[k]); const sc = schoolSets(by[k]);
+      return {region:k, n:s.n, total:s.total, female:s.female, pwd:s.pwdM+s.pwdF, schools:(sc[k] || new Set()).size}; });
+  }
+
+  function districtData(rows){
+    const by = {};
+    rows.forEach(r=>{ const k = districtLabel(r); (by[k] = by[k] || {region:r.region||'', rows:[]}).rows.push(r); });
+    return Object.entries(by).map(([district,v])=>{ const s = statsOf(v.rows);
+      return {district, region:v.region, n:s.n, total:s.total, female:s.female, pwd:s.pwdM+s.pwdF}; })
+      .sort((a,b)=> b.total - a.total || b.n - a.n);
+  }
+
+  function genderData(p, rows){
+    return TOOL_LIST.filter(k=> p.tools.includes(k)).map(k=>{
+      const s = statsOf(rows.filter(r=> r.activity_type === TABS[k].activityType));
+      return {label:TABS[k].title, male:s.male, female:s.female, pwdM:s.pwdM, pwdF:s.pwdF};
+    });
+  }
+
+  function categoryData(rows){
+    const t = categoryTotals(rows);
+    return Object.keys(t).map(c=> ({cat:c, name:CATEGORY_NAMES[c] || '', value:t[c]})).sort((a,b)=> b.value - a.value);
+  }
+
+  function indicatorData(rows){
+    const res = computeIndicators(rows), out = [];
+    IND_SECTIONS.forEach(sec=> sec.ids.forEach(id=>{
+      const i = INDICATORS.find(x=> x.id === id), r = res[id];
+      let status = 'No data source', value = null, pct = null;
+      if(r && r.pending) status = 'Re-sync needed';
+      else if(r){ status = 'Live'; value = r.value; pct = i.target ? r.value / i.target : null; }
+      out.push({id, section:sec.name, text:i.text, targetNum:i.target, target:i.isPercent ? i.target + '%' : fmtN(i.target), value, pct, status});
+    }));
+    return out;
+  }
+
+  function qualitativeData(rows){
+    return rows.filter(r=> (r.challenges && r.challenges.trim()) || (r.recommendations && r.recommendations.trim()))
+      .sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+  }
+
+  // ---------- formatting helpers ----------
+  function niceDate(s){
+    if(!s) return '';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s); if(!m) return s;
+    return new Date(+m[1], +m[2]-1, +m[3]).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+  }
+  function periodText(p, rows){
+    if(p.from && p.to) return niceDate(p.from) + ' – ' + niceDate(p.to);
+    if(p.from) return 'From ' + niceDate(p.from);
+    if(p.to) return 'Up to ' + niceDate(p.to);
+    const ds = rows.map(r=>r.date).filter(Boolean).sort();
+    return ds.length ? 'All dates (' + niceDate(ds[0]) + ' – ' + niceDate(ds[ds.length-1]) + ')' : 'All dates';
+  }
+  function scopeText(p){
+    const tools = p.tools.length === TOOL_LIST.length ? 'All four tools' : (p.tools.map(k=>TABS[k].title).join(', ') || 'No tools');
+    let t = tools;
+    if(p.tools.includes('training') && p.subs.length < TRAINING_SUBS.length) t += ' (Training: ' + (p.subs.join(', ') || 'none') + ')';
+    return t;
+  }
+  function geoText(p){ return p.district ? p.district + (p.region ? ', ' + p.region : '') + ' district' : (p.region ? p.region + ' region' : 'All regions and districts'); }
+
+  const bar = (frac, cls) => `<div class="bar"><i class="${cls||''}" style="width:${Math.max(0, Math.min(100, (frac||0)*100)).toFixed(1)}%"></i></div>`;
+  const pctTxt = f => (f == null) ? '—' : fmtPct(f);
+
+  // ---------- section renderers (HTML) ----------
+  function secSummary(p, rows){
+    const s = statsOf(rows), tb = toolBreakdown(p, rows);
+    const kpi = (v,l)=> `<div class="k"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+    const sentence = `${p.from || p.to ? 'In the selected period' : 'Across all recorded activity'}, <b>${fmtN(s.n)}</b> activit${s.n===1?'y was':'ies were'} logged in <b>${fmtN(s.districts)}</b> district${s.districts===1?'':'s'}, reaching <b>${fmtN(s.total)}</b> participants. ${(s.male+s.female) ? femShare(s) + ' of those with recorded gender were women and girls.' : ''}`;
+    const trs = tb.map(t=> `<tr class="${t.sub?'sub':''}"><td>${esc(t.label)}</td><td class="num">${fmtN(t.s.n)}</td><td class="num">${fmtN(t.s.total)}</td><td class="num">${fmtN(t.s.male)}</td><td class="num">${fmtN(t.s.female)}</td><td class="num">${fmtN(t.s.pwdM+t.s.pwdF)}</td><td class="num">${fmtN(t.s.districts)}</td><td class="num">${fmtN(t.s.schools)}</td></tr>`).join('');
+    const notes = [];
+    if(p.tools.includes('radio')) notes.push('Radio Talkshow participants are estimated audience figures.');
+    if(p.tools.includes('backtoschool')) notes.push('Back to School participants are teenage mothers identified.');
+    return `<h2>Executive summary</h2>
+      <div class="kgrid">${kpi(fmtN(s.n),'Activities logged')}${kpi(fmtN(s.total),'Participants reached')}${kpi(femShare(s),'Female share')}${kpi(fmtN(s.pwdM+s.pwdF),'PWD participants')}${kpi(fmtN(s.districts),'Districts covered')}${kpi(fmtN(s.schools),'Schools reached')}</div>
+      <p>${sentence}</p>
+      <table><thead><tr><th>Tool</th><th class="num">Activities</th><th class="num">Participants</th><th class="num">Male</th><th class="num">Female</th><th class="num">PWD</th><th class="num">Districts</th><th class="num">Schools</th></tr></thead><tbody>${trs}
+      <tr class="tot"><td>Total</td><td class="num">${fmtN(s.n)}</td><td class="num">${fmtN(s.total)}</td><td class="num">${fmtN(s.male)}</td><td class="num">${fmtN(s.female)}</td><td class="num">${fmtN(s.pwdM+s.pwdF)}</td><td class="num">${fmtN(s.districts)}</td><td class="num">${fmtN(s.schools)}</td></tr></tbody></table>
+      ${notes.length ? `<div class="note">${notes.join(' ')}</div>` : ''}`;
+  }
+
+  function secIndicators(p, rows){
+    const data = indicatorData(rows);
+    let html = '', last = '';
+    data.forEach(d=>{
+      if(d.section !== last){ html += `<tr class="grp"><td colspan="5">${esc(d.section)}</td></tr>`; last = d.section; }
+      const prog = d.status === 'Live'
+        ? `<div style="display:flex;align-items:center;gap:8px;">${bar(d.pct, d.pct>=1?'g':'')}<span style="font-family:'IBM Plex Mono',monospace;white-space:nowrap">${pctTxt(d.pct)}</span></div>`
+        : `<span class="dim">${esc(d.status)}</span>`;
+      html += `<tr><td class="num">${d.id}</td><td>${esc(d.text)}</td><td class="num">${d.value == null ? '—' : fmtN(d.value)}</td><td class="num">${esc(d.target)}</td><td style="min-width:150px">${prog}</td></tr>`;
+    });
+    return `<h2>Indicators vs targets</h2>
+      <table><thead><tr><th class="num">#</th><th>Indicator</th><th class="num">Achieved</th><th class="num">LOP target</th><th>Progress</th></tr></thead><tbody>${html}</tbody></table>
+      <div class="note">Achieved reflects only records inside this report's period and scope; targets are life-of-programme (LOP). Indicators marked "No data source" are not collected by any field tool yet.</div>`;
+  }
+
+  function secRegion(p, rows){
+    const d = regionData(rows), max = Math.max(1, ...d.map(x=>x.total));
+    const trs = d.map(x=> `<tr><td>${esc(x.region)}</td><td class="num">${fmtN(x.n)}</td><td class="num">${fmtN(x.total)}</td><td class="num">${fmtN(x.female)}</td><td class="num">${fmtN(x.pwd)}</td><td class="num">${fmtN(x.schools)}</td><td style="min-width:110px">${bar(x.total/max)}</td></tr>`).join('');
+    return `<h2>Reach by region</h2>
+      <table><thead><tr><th>Region</th><th class="num">Activities</th><th class="num">Participants</th><th class="num">Female</th><th class="num">PWD</th><th class="num">Schools</th><th>Share</th></tr></thead><tbody>${trs}</tbody></table>
+      <div class="note">Schools are distinct schools named in submissions (or venues that read as schools), counted once per region.</div>`;
+  }
+
+  function secDistrict(p, rows){
+    const all = districtData(rows), d = all.slice(0, DISTRICT_LIMIT), max = Math.max(1, ...d.map(x=>x.total));
+    const trs = d.map(x=> `<tr><td>${esc(x.district)}</td><td>${esc(x.region)}</td><td class="num">${fmtN(x.n)}</td><td class="num">${fmtN(x.total)}</td><td class="num">${fmtN(x.female)}</td><td class="num">${fmtN(x.pwd)}</td><td style="min-width:110px">${bar(x.total/max)}</td></tr>`).join('');
+    return `<h2>Reach by district</h2>
+      <table><thead><tr><th>District</th><th>Region</th><th class="num">Activities</th><th class="num">Participants</th><th class="num">Female</th><th class="num">PWD</th><th>Share</th></tr></thead><tbody>${trs}</tbody></table>
+      <div class="note">${all.length > d.length ? `Top ${d.length} of ${all.length} districts by participants. Download the Excel or CSV version for the full list.` : `${all.length} district${all.length===1?'':'s'}.`}</div>`;
+  }
+
+  function secGender(p, rows){
+    const d = genderData(p, rows);
+    const tot = d.reduce((a,x)=>({male:a.male+x.male, female:a.female+x.female, pwdM:a.pwdM+x.pwdM, pwdF:a.pwdF+x.pwdF}), {male:0,female:0,pwdM:0,pwdF:0});
+    const share = (tot.male+tot.female) ? tot.female/(tot.male+tot.female) : null;
+    const trs = d.map(x=> `<tr><td>${esc(x.label)}</td><td class="num">${fmtN(x.male)}</td><td class="num">${fmtN(x.female)}</td><td class="num">${fmtN(x.pwdM)}</td><td class="num">${fmtN(x.pwdF)}</td></tr>`).join('');
+    return `<h2>Gender &amp; inclusion</h2>
+      ${share == null ? '<p class="dim">No gender-disaggregated attendance recorded in this scope.</p>' : `<p>Women and girls make up <b>${Math.round(share*100)}%</b> of recorded male/female attendance.</p><div style="max-width:420px">${bar(share,'g')}</div>`}
+      <table><thead><tr><th>Tool</th><th class="num">Male</th><th class="num">Female</th><th class="num">PWD male</th><th class="num">PWD female</th></tr></thead><tbody>${trs}
+      <tr class="tot"><td>Total</td><td class="num">${fmtN(tot.male)}</td><td class="num">${fmtN(tot.female)}</td><td class="num">${fmtN(tot.pwdM)}</td><td class="num">${fmtN(tot.pwdF)}</td></tr></tbody></table>`;
+  }
+
+  function secCategories(p, rows){
+    const d = categoryData(rows), max = Math.max(1, ...d.map(x=>x.value));
+    const trs = d.map(x=> `<tr><td>${esc(x.cat)}</td><td class="dim">${esc(x.name)}</td><td class="num">${fmtN(x.value)}</td><td style="min-width:110px">${bar(x.value/max,'g')}</td></tr>`).join('');
+    return `<h2>Participant categories</h2>
+      <table><thead><tr><th>Category</th><th>Description</th><th class="num">Participants</th><th>Share</th></tr></thead><tbody>${trs || '<tr><td colspan="4" class="dim">No category data in this scope.</td></tr>'}</tbody></table>
+      <div class="note">Radio and Back to School categories are engagement and outcome counts (calls, SMS, PSWs, re-enrolments), not people in the room.</div>`;
+  }
+
+  function secQualitative(p, rows){
+    const all = qualitativeData(rows), d = all.slice(0, QUAL_LIMIT);
+    const items = d.map(r=> `<div class="q"><div class="qh"><b>${esc(toolLabelOf(r))}</b> · ${esc(districtLabel(r))} · ${esc(niceDate(r.date))}</div>
+      ${r.challenges && r.challenges.trim() ? `<div class="ql">Challenges</div><div>${esc(r.challenges)}</div>` : ''}
+      ${r.recommendations && r.recommendations.trim() ? `<div class="ql">Recommendations</div><div>${esc(r.recommendations)}</div>` : ''}</div>`).join('');
+    return `<h2>Challenges &amp; recommendations</h2>${items || '<p class="dim">No challenges or recommendations recorded in this scope.</p>'}
+      ${all.length > d.length ? `<div class="note">Showing the ${d.length} most recent of ${all.length} entries.</div>` : ''}`;
+  }
+
+  function secLog(p, rows){
+    const sorted = [...rows].sort((a,b)=> String(b.date||'').localeCompare(String(a.date||''))), d = sorted.slice(0, LOG_LIMIT);
+    const trs = d.map(r=> `<tr><td class="num">${esc(r.date||'')}</td><td>${esc(toolLabelOf(r))}</td><td>${esc(districtLabel(r))}</td><td>${esc(r.school || r.venue || '')}</td><td class="num">${fmtN(r.male)}</td><td class="num">${fmtN(r.female)}</td><td class="num">${fmtN(r.total)}</td><td>${esc(r.officer||'')}</td></tr>`).join('');
+    return `<h2>Activity log</h2>
+      <table><thead><tr><th>Date</th><th>Tool</th><th>District</th><th>Venue / school</th><th class="num">M</th><th class="num">F</th><th class="num">Total</th><th>Officer</th></tr></thead><tbody>${trs}</tbody></table>
+      ${sorted.length > d.length ? `<div class="note">Showing the ${d.length} most recent of ${sorted.length} activities. Download the CSV for the full list.</div>` : ''}`;
+  }
+
+  const SECTION_RENDERERS = {summary:secSummary, indicators:secIndicators, region:secRegion, district:secDistrict, gender:secGender, categories:secCategories, qualitative:secQualitative, log:secLog};
+
+  function reportBodyHTML(p, rows){
+    const today = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+    let html = `<div class="rpt-eyebrow">Edukans LiT · Programme report</div><h1>${esc(p.title)}</h1>
+      <div class="rpt-meta">
+        <div><b>Period:</b> ${esc(periodText(p, rows))}</div>
+        <div><b>Tools:</b> ${esc(scopeText(p))}</div>
+        <div><b>Geography:</b> ${esc(geoText(p))}</div>
+        <div><b>Generated:</b> ${esc(today)}${p.by ? ' · <b>Prepared by:</b> ' + esc(p.by) : ''}</div>
+      </div>
+      ${p.notes ? `<div class="notes">${esc(p.notes)}</div>` : ''}`;
+    if(!rows.length){
+      html += `<div class="rpt-empty">No records match these parameters. Widen the period, choose more tools or clear the geography filter.</div>`;
+    } else {
+      REPORT_SECTIONS.forEach(s=>{ if(p.sections.includes(s.id)) html += SECTION_RENDERERS[s.id](p, rows); });
+      if(!p.sections.length) html += `<div class="rpt-empty">No sections selected.</div>`;
+    }
+    html += `<div class="rpt-foot">Source: KoBoToolbox submissions via the Edukans LiT Programme Console · ${fmtN(rows.length)} record${rows.length===1?'':'s'} in this report.</div>`;
+    return html;
+  }
+
+  function reportDocumentHTML(p, rows){
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(p.title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>@page{size:A4; margin:14mm;} html,body{margin:0;padding:0;background:#fff;} ${REPORT_CSS}</style></head>
+<body><div class="rpt">${reportBodyHTML(p, rows)}</div></body></html>`;
+  }
+
+  // ---------- downloads ----------
+  const RECORD_COLS = [
+    ['Date','date'],['Tool','activity_type'],['Training tool','training_type'],['Region','region'],['District','district'],
+    ['Sub-county','subcounty'],['Venue','venue'],['School','school'],['Participant category','participant_category'],
+    ['Male','male'],['Female','female'],['PWD male','pwd_male'],['PWD female','pwd_female'],['Total','total'],
+    ['Category counts',null],['Description','description'],['Feedback','feedback'],['Challenges','challenges'],
+    ['Recommendations','recommendations'],['Officer','officer'],['Submitted','submitted']
+  ];
+  function recordCell(r, key){
+    if(key === null) return r.category_counts ? Object.entries(r.category_counts).map(([k,v])=> k + ': ' + v).join('; ') : '';
+    const v = r[key]; return v == null ? '' : v;
+  }
+  function recordsAOA(rows){
+    return [RECORD_COLS.map(c=>c[0])].concat(rows.map(r=> RECORD_COLS.map(c=> recordCell(r, c[1]))));
+  }
+  function csvCell(v){
+    let s = String(v == null ? '' : v);
+    if(typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;   // stop spreadsheet formula injection
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }
+  function recordsCSV(rows){ return '\ufeff' + recordsAOA(rows).map(r=> r.map(csvCell).join(',')).join('\r\n'); }
+
+  function workbookSheets(p, rows){
+    const s = statsOf(rows);
+    const sheets = [];
+    sheets.push({name:'Summary', aoa:[
+      [p.title], [],
+      ['Period', periodText(p, rows)], ['Tools', scopeText(p)], ['Geography', geoText(p)],
+      ['Prepared by', p.by || ''], ['Generated', new Date().toLocaleString('en-GB')], ['Records', rows.length], [],
+      ['Tool','Activities','Participants','Male','Female','PWD','Districts','Schools']
+    ].concat(toolBreakdown(p, rows).map(t=> [(t.sub ? '   ' : '') + t.label, t.s.n, t.s.total, t.s.male, t.s.female, t.s.pwdM+t.s.pwdF, t.s.districts, t.s.schools]))
+     .concat([['Total', s.n, s.total, s.male, s.female, s.pwdM+s.pwdF, s.districts, s.schools]])
+     .concat(p.notes ? [[], ['Notes', p.notes]] : [])});
+    sheets.push({name:'Indicators', aoa:[['#','Section','Indicator','Achieved','LOP target','Progress','Status']]
+      .concat(indicatorData(rows).map(d=> [d.id, d.section, d.text, d.value == null ? '' : d.value, d.targetNum, d.pct == null ? '' : Math.round(d.pct*1000)/10 + '%', d.status]))});
+    sheets.push({name:'By region', aoa:[['Region','Activities','Participants','Female','PWD','Schools']]
+      .concat(regionData(rows).map(x=> [x.region, x.n, x.total, x.female, x.pwd, x.schools]))});
+    sheets.push({name:'By district', aoa:[['District','Region','Activities','Participants','Female','PWD']]
+      .concat(districtData(rows).map(x=> [x.district, x.region, x.n, x.total, x.female, x.pwd]))});
+    sheets.push({name:'Categories', aoa:[['Category','Description','Participants']]
+      .concat(categoryData(rows).map(x=> [x.cat, x.name, x.value]))});
+    sheets.push({name:'Records', aoa: recordsAOA(rows)});
+    return sheets;
+  }
+
+  function reportSlug(p){ return (p.title || 'report').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'report'; }
+  function ymd(d){ const z = n=> String(n).padStart(2,'0'); return d.getFullYear() + '-' + z(d.getMonth()+1) + '-' + z(d.getDate()); }
+  function saveBlob(blob, filename){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function repStatus(msg, bad){
+    const el = document.getElementById('rp-status'); if(!el) return;
+    el.textContent = msg; el.style.color = bad ? 'var(--clay)' : 'var(--ink-dim)';
+  }
+
+  function downloadCSV(){
+    const p = readReportParams(), rows = reportRows(p);
+    if(!rows.length){ repStatus('Nothing to download: no records match these parameters.', true); return; }
+    saveBlob(new Blob([recordsCSV(rows)], {type:'text/csv;charset=utf-8'}), reportSlug(p) + '_records_' + ymd(new Date()) + '.csv');
+    repStatus('CSV downloaded (' + fmtN(rows.length) + ' records).');
+  }
+  function downloadXLSX(){
+    const p = readReportParams(), rows = reportRows(p);
+    if(!rows.length){ repStatus('Nothing to download: no records match these parameters.', true); return; }
+    if(typeof XLSX === 'undefined'){ repStatus('The Excel library could not load (offline?). Use CSV instead.', true); return; }
+    const wb = XLSX.utils.book_new();
+    workbookSheets(p, rows).forEach(sh=>{
+      const ws = XLSX.utils.aoa_to_sheet(sh.aoa);
+      const widths = sh.aoa.reduce((w,row)=>{ row.forEach((c,i)=>{ w[i] = Math.min(60, Math.max(w[i]||8, String(c==null?'':c).length + 2)); }); return w; }, []);
+      ws['!cols'] = widths.map(wch=>({wch}));
+      XLSX.utils.book_append_sheet(wb, ws, sh.name);
+    });
+    XLSX.writeFile(wb, reportSlug(p) + '_' + ymd(new Date()) + '.xlsx');
+    repStatus('Excel workbook downloaded.');
+  }
+  function downloadPDF(){
+    const p = readReportParams(), rows = reportRows(p);
+    if(!rows.length){ repStatus('Nothing to print: no records match these parameters.', true); return; }
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+    const prevTitle = document.title;
+    const cleanup = ()=>{ document.title = prevTitle; setTimeout(()=> f.remove(), 500); };
+    f.onload = ()=>{
+      setTimeout(()=>{
+        try{
+          document.title = p.title;
+          f.contentWindow.onafterprint = cleanup;
+          f.contentWindow.focus(); f.contentWindow.print();
+          setTimeout(cleanup, 60000);
+        }catch(e){ cleanup(); repStatus('Could not open the print dialog: ' + e.message, true); }
+      }, 700);   // give web fonts a moment to load
+    };
+    document.body.appendChild(f);
+    f.srcdoc = reportDocumentHTML(p, rows);
+    repStatus('Opening print dialog: choose "Save as PDF" as the destination.');
+  }
+
+  // ---------- on-screen UI ----------
+  const repState = {built:false, titleDirty:false};
+
+  function periodRange(kind){
+    const t = new Date(); t.setHours(0,0,0,0);
+    if(kind === 'all') return ['',''];
+    if(kind === '7' || kind === '30' || kind === '90'){ const s = new Date(t); s.setDate(s.getDate() - (+kind - 1)); return [ymd(s), ymd(t)]; }
+    if(kind === 'month') return [ymd(new Date(t.getFullYear(), t.getMonth(), 1)), ymd(t)];
+    if(kind === 'lastmonth') return [ymd(new Date(t.getFullYear(), t.getMonth()-1, 1)), ymd(new Date(t.getFullYear(), t.getMonth(), 0))];
+    return null;
+  }
+
+  function readReportParams(){
+    const q = id => document.getElementById(id);
+    return {
+      title: q('rp-title').value.trim() || 'Programme report', by: q('rp-by').value.trim(), notes: q('rp-notes').value.trim(),
+      from: q('rp-from').value, to: q('rp-to').value,
+      tools: TOOL_LIST.filter(k=> q('rp-tool-'+k).checked),
+      subs: TRAINING_SUBS.filter((s,i)=> q('rp-sub-'+i).checked),
+      region: q('rp-region').value, district: q('rp-district').value,
+      sections: REPORT_SECTIONS.map(s=>s.id).filter(id=> q('rp-sec-'+id).checked)
+    };
+  }
+
+  function buildReportUI(){
+    const el = document.getElementById('content-reports'); if(!el) return;
+    const chk = (id, label, on, extra) => `<label class="rp-chk"><input type="checkbox" id="${id}" ${on?'checked':''} ${extra||''}> <span>${label}</span></label>`;
+    el.innerHTML = `
+      <div class="rp-layout">
+        <div class="panel rp-config">
+          <h3>Report builder</h3>
+          <div class="panel-sub">Pick what goes in, then download.</div>
+
+          <div class="rp-grp"><label>Report type</label>
+            <div class="rp-presets">${Object.entries(REPORT_PRESETS).map(([k,v])=> `<button type="button" class="rp-pre${k==='summary'?' on':''}" data-preset="${k}">${v.label}</button>`).join('')}</div>
+          </div>
+
+          <div class="rp-grp"><label>Title</label><input type="text" id="rp-title" value="${esc(REPORT_PRESETS.summary.title)}">
+            <label style="margin-top:8px">Prepared by (optional)</label><input type="text" id="rp-by" placeholder="Name or team">
+            <label style="margin-top:8px">Notes for the reader (optional)</label><textarea id="rp-notes" rows="3" placeholder="Context, caveats, headline messages…"></textarea>
+          </div>
+
+          <div class="rp-grp"><label>Period</label>
+            <select id="rp-period">
+              <option value="all">All time</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option>
+              <option value="month">This month</option><option value="lastmonth">Last month</option><option value="custom">Custom range</option>
+            </select>
+            <div class="rp-dates"><input type="date" id="rp-from" aria-label="From date"><span>to</span><input type="date" id="rp-to" aria-label="To date"></div>
+          </div>
+
+          <div class="rp-grp"><label>Tools</label>
+            ${TOOL_LIST.map(k=> chk('rp-tool-'+k, TABS[k].title, true, 'data-tool="'+k+'"')).join('')}
+            <div class="rp-sub" id="rp-subs">${TRAINING_SUBS.map((s,i)=> chk('rp-sub-'+i, s, true)).join('')}</div>
+          </div>
+
+          <div class="rp-grp"><label>Geography</label>
+            <select id="rp-region"><option value="">All regions</option></select>
+            <select id="rp-district" style="margin-top:6px"><option value="">All districts</option></select>
+          </div>
+
+          <div class="rp-grp"><label>Sections to include</label>
+            ${REPORT_SECTIONS.map(s=> chk('rp-sec-'+s.id, s.label, REPORT_PRESETS.summary.sections.includes(s.id))).join('')}
+          </div>
+
+          <div class="rp-grp">
+            <div class="rp-btns">
+              <button type="button" class="rp-btn primary" id="rp-pdf">Download PDF</button>
+              <button type="button" class="rp-btn" id="rp-xlsx">Excel</button>
+              <button type="button" class="rp-btn" id="rp-csv">CSV</button>
+            </div>
+            <div class="rp-status" id="rp-status"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="rp-count" id="rp-count"></div>
+          <div class="rp-paper"><div class="rpt" id="rp-preview"></div></div>
+        </div>
+      </div>`;
+
+    const q = id => document.getElementById(id);
+    const rerender = ()=> renderReportPreview();
+
+    el.addEventListener('input', e=>{ if(e.target.id === 'rp-title') repState.titleDirty = true; });
+    el.addEventListener('change', e=>{
+      const t = e.target;
+      if(t.id === 'rp-period'){
+        const r = periodRange(t.value);
+        if(r){ q('rp-from').value = r[0]; q('rp-to').value = r[1]; }
+      } else if(t.id === 'rp-from' || t.id === 'rp-to'){
+        q('rp-period').value = 'custom';
+      } else if(t.id === 'rp-region'){
+        refreshReportGeo();
+      }
+      if(t.dataset && t.dataset.tool === 'training') q('rp-subs').style.opacity = t.checked ? '1' : '.4';
+      rerender();
+    });
+    el.addEventListener('input', e=>{ if(['rp-title','rp-by','rp-notes'].includes(e.target.id)) rerender(); });
+    el.querySelectorAll('.rp-pre').forEach(b=> b.addEventListener('click', ()=>{
+      const pr = REPORT_PRESETS[b.dataset.preset];
+      el.querySelectorAll('.rp-pre').forEach(x=> x.classList.toggle('on', x === b));
+      REPORT_SECTIONS.forEach(s=>{ q('rp-sec-'+s.id).checked = pr.sections.includes(s.id); });
+      if(!repState.titleDirty) q('rp-title').value = pr.title;
+      rerender();
+    }));
+    q('rp-pdf').addEventListener('click', downloadPDF);
+    q('rp-xlsx').addEventListener('click', downloadXLSX);
+    q('rp-csv').addEventListener('click', downloadCSV);
+    repState.built = true;
+  }
+
+  function refreshReportGeo(){
+    const q = id => document.getElementById(id);
+    const regSel = q('rp-region'), disSel = q('rp-district'); if(!regSel || !disSel) return;
+    const regions = orderRegions(new Set(RAW.map(r=> r.region).filter(x=> x && x !== 'Unknown')));
+    const keepR = regSel.value;
+    regSel.innerHTML = '<option value="">All regions</option>' + regions.map(r=> `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    regSel.value = regions.includes(keepR) ? keepR : '';
+    const pool = RAW.filter(r=> !regSel.value || r.region === regSel.value);
+    const ds = [...new Set(pool.flatMap(r=> districtTokens(r).map(titleCase)))].sort();
+    const keepD = disSel.value;
+    disSel.innerHTML = '<option value="">All districts</option>' + ds.map(d=> `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    disSel.value = ds.includes(keepD) ? keepD : '';
+  }
+
+  function renderReportPreview(){
+    const prev = document.getElementById('rp-preview'); if(!prev) return;
+    const p = readReportParams(), rows = reportRows(p);
+    prev.innerHTML = reportBodyHTML(p, rows);
+    const c = document.getElementById('rp-count');
+    if(c) c.textContent = fmtN(rows.length) + ' of ' + fmtN(RAW.length) + ' records match · live preview';
+  }
+
+  function renderReports(){
+    if(!repState.built){
+      buildReportUI();
+      const st = document.createElement('style'); st.textContent = REPORT_CSS; document.head.appendChild(st);
+    }
+    refreshReportGeo();
+    renderReportPreview();
+  }
+
   // ================= Tab switching =================
   function switchTab(tabKey){
     document.querySelectorAll('.navitem').forEach(n=> n.classList.toggle('active', n.dataset.tab===tabKey));
     document.querySelectorAll('.tabpanel').forEach(p=> p.classList.toggle('active', p.id === 'tab-'+tabKey));
-    const meta = tabKey === 'indicators' ? INDICATORS_PAGE : TABS[tabKey];
+    const meta = tabKey === 'indicators' ? INDICATORS_PAGE : tabKey === 'reports' ? REPORTS_PAGE : TABS[tabKey];
     document.getElementById('pagetitle').textContent = meta.title;
     document.getElementById('pagesub').textContent = meta.sub;
-    if(tabKey !== 'overview' && tabKey !== 'indicators' && !document.getElementById('content-'+tabKey).dataset.built){
+    if(!['overview','indicators','reports'].includes(tabKey) && !document.getElementById('content-'+tabKey).dataset.built){
       initActivityTab(tabKey);
       document.getElementById('content-'+tabKey).dataset.built = "1";
     }
@@ -1713,12 +2280,13 @@
     updateTicker();
     renderOverview();
     renderIndicators();
+    renderReports();
     ['training','radio','dialogue','backtoschool'].forEach(k=>{
       document.getElementById('content-'+k).dataset.built = "";
     });
     const activeTab = document.querySelector('.navitem.active');
     const activeKey = activeTab ? activeTab.dataset.tab : 'overview';
-    if(activeKey !== 'overview' && activeKey !== 'indicators'){ initActivityTab(activeKey); document.getElementById('content-'+activeKey).dataset.built = "1"; }
+    if(!['overview','indicators','reports'].includes(activeKey)){ initActivityTab(activeKey); document.getElementById('content-'+activeKey).dataset.built = "1"; }
   }
 
   onDataChanged();
