@@ -1,0 +1,23 @@
+name: Import legacy data (run once)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Copy the old training data into Firebase
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SYNC_EMAIL: ${{ secrets.FIREBASE_SYNC_EMAIL }}
+          FIREBASE_SYNC_PASSWORD: ${{ secrets.FIREBASE_SYNC_PASSWORD }}
+        run: python scripts/import_legacy.py

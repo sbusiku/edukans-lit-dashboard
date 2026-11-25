@@ -1,37 +1,27 @@
-name: Sync KoBo activity data
+name: Sync KoBo data to Firebase
 
 on:
   schedule:
-    # every 15 minutes. Adjust as needed -- GitHub's minimum practical
-    # interval is ~5 min, but scheduled runs can lag under load.
-    - cron: "7,22,38,52 * * * *"
-  workflow_dispatch: {}   # lets you trigger a manual sync from the Actions tab
+    - cron: "*/15 * * * *"   # every 15 minutes
+  workflow_dispatch: {}       # lets you run it by hand from the Actions tab
 
 permissions:
-  contents: write
+  contents: read              # this job no longer writes anything into the public repo
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Run sync script (all five forms)
+      - name: Pull from KoBo and publish to Firebase
         env:
           KOBO_API_TOKEN: ${{ secrets.KOBO_API_TOKEN }}
           KOBO_SERVER: https://kf.kobotoolbox.org
-        run: python scripts/sync_kobo.py
-
-      - name: Commit updated data (if changed)
-        run: |
-          git config user.name "kobo-sync-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/activities.json
-          git diff --cached --quiet || git commit -m "sync: update activity data [skip ci]"
-          git push
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SYNC_EMAIL: ${{ secrets.FIREBASE_SYNC_EMAIL }}
+          FIREBASE_SYNC_PASSWORD: ${{ secrets.FIREBASE_SYNC_PASSWORD }}
+        run: python scripts/sync_kobo.py --firestore
