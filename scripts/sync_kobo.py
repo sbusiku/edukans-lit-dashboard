@@ -43,6 +43,9 @@ Modes:
                                             field_map. For the static
                                             "training_legacy" key it just
                                             confirms there's nothing to fetch.
+  python sync_kobo.py --firestore       -> full sync of the live forms, published to Firebase
+                                            (this is what the GitHub Action runs; nothing is
+                                            written to the public repo)
   python sync_kobo.py                   -> full sync of every source in
                                             forms.json into data/activities.json
   python sync_kobo.py --only bog_pta    -> sync just one source (for
@@ -314,8 +317,14 @@ def cmd_inspect(key):
               "-- values for this form are used as-is, no code-to-label resolution applied.")
 
 
-def cmd_sync(only=None):
+def cmd_sync(only=None, firestore=False):
     forms = load_forms()
+    if firestore:
+        if only:
+            print("--only is not supported together with --firestore (a full sync is quick).", file=sys.stderr)
+            sys.exit(1)
+        # the old baseline now lives in Firebase (imported once), so static sources are skipped here
+        forms = [f for f in forms if not f.get("static")]
     if only:
         forms = [f for f in forms if f["key"] == only]
         if not forms:
@@ -346,6 +355,13 @@ def cmd_sync(only=None):
         all_records.extend(transformed)
         counts[key] = len(transformed)
         print(f"  {key:16s} ({form['activity_type']:20s}) -> {len(transformed)} records")
+
+    if firestore:
+        import firestore_sync
+        print(f"\nPublishing {len(all_records)} live records to Firebase ...")
+        firestore_sync.publish(live=all_records)
+        print("Breakdown:", counts)
+        return
 
     if only:
         # merge into existing file, replacing just this form's own records
@@ -396,7 +412,7 @@ def main():
             sys.exit(1)
         only = args[idx + 1]
 
-    cmd_sync(only=only)
+    cmd_sync(only=only, firestore="--firestore" in args)
 
 
 if __name__ == "__main__":
